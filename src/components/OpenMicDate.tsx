@@ -42,11 +42,17 @@ export default function OpenMicDate() {
   if (!date) return null;
 
   return (
-    <div className="text-center mb-6">
-      <h2 className="text-2xl font-semibold text-gray-800">
-        Next Open Mic Night
+    <div className="text-center space-y-4">
+      <h2 className="text-2xl font-heading font-semibold text-foreground">
+        Next Open Mic: 
       </h2>
-      <p className="text-xl text-gray-600 mt-2">{date}</p>
+      <p className="text-xl text-muted font-medium">{date} at 7:30pm</p>
+      <div className="flex items-center justify-center space-x-2 text-sm text-muted-light">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Please arrive by 7:15pm</span>
+      </div>
     </div>
   );
 } 

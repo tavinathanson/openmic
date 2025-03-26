@@ -64,16 +64,18 @@ export default function SlotCounter() {
   if (!currentDate) return null;
 
   return (
-    <div className="text-center p-4 bg-gray-100 rounded-lg">
-      <h3 className="text-lg text-gray-600 mb-2">
-        For {currentDate}
-      </h3>
-      <h2 className="text-2xl font-bold text-gray-800">
-        {remainingSlots} Comedian Slots Left
-      </h2>
-      <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+    <div className="text-center space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-3xl font-heading font-bold text-foreground">
+          {remainingSlots} Comedian Slots Left
+        </h2>
+        <p className="text-sm text-muted">
+          {remainingSlots === 0 ? 'No slots remaining' : `${remainingSlots} of ${maxSlots} slots available`}
+        </p>
+      </div>
+      <div className="w-full bg-muted-light/5 rounded-full h-2 overflow-hidden">
         <div
-          className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
+          className="bg-primary h-full rounded-full transition-all duration-700 ease-out"
           style={{ width: `${(remainingSlots / maxSlots) * 100}%` }}
         ></div>
       </div>
