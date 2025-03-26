@@ -2,17 +2,27 @@
   "name": "openmic",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:push": "NODE_ENV=development npx ts-node --project tsconfig.node.json scripts/db.ts push",
+    "db:push:prod": "NODE_ENV=production npx ts-node --project tsconfig.node.json scripts/db.ts push",
+    "db:pull": "NODE_ENV=development npx ts-node --project tsconfig.node.json scripts/db.ts pull",
+    "db:pull:prod": "NODE_ENV=production npx ts-node --project tsconfig.node.json scripts/db.ts pull",
+    "db:reset": "NODE_ENV=development npx ts-node --project tsconfig.node.json scripts/db.ts reset",
+    "db:reset:prod": "NODE_ENV=production npx ts-node --project tsconfig.node.json scripts/db.ts reset",
+    "db:status": "NODE_ENV=development npx ts-node --project tsconfig.node.json scripts/db.ts status",
+    "db:status:prod": "NODE_ENV=production npx ts-node --project tsconfig.node.json scripts/db.ts status"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.772.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.49.1",
     "@vercel/analytics": "^1.5.0",
+    "dotenv": "^16.4.5",
     "next": "15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -21,12 +31,14 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/dotenv": "^8.2.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

@@ -4,7 +4,7 @@ import { sendConfirmationEmail } from '@/lib/resend';
 
 export async function POST(request: Request) {
   try {
-    const { email, type } = await request.json();
+    const { email, type, full_name, number_of_people } = await request.json();
 
     if (!email || !type) {
       return NextResponse.json(
@@ -38,7 +38,11 @@ export async function POST(request: Request) {
     // Insert the signup
     const { data, error } = await supabase
       .from(type === 'comedian' ? 'comedians' : 'audience')
-      .insert([{ email }])
+      .insert([{
+        email,
+        ...(type === 'comedian' ? { full_name } : {}),
+        ...(type === 'audience' ? { number_of_people: number_of_people || 1 } : {})
+      }])
       .select()
       .single();
 

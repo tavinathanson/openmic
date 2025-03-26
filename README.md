@@ -16,18 +16,31 @@ A modern web application for managing comedy open mic signups. Built with Next.j
 - Node.js 18+ and npm/yarn/pnpm
 - Supabase account and project
 - Resend account for email functionality
+- Supabase CLI installed via Homebrew: `brew install supabase/tap/supabase`
 
 ## Environment Variables
 
 Create a `.env.local` file in the root directory with the following variables:
 
 ```bash
+# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+DATABASE_URL=postgresql://postgres:your_password@db.your_project_ref.supabase.co:5432/postgres
+
+# Email Configuration
 RESEND_API_KEY=your_resend_api_key
+
+# Application Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000 # Change in production
 NEXT_PUBLIC_MAX_COMEDIAN_SLOTS=20 # Optional, defaults to 20
 ```
+
+You can find your database connection string in your Supabase project settings:
+1. Go to Project Settings > Database
+2. Find the "Connection string" section
+3. Copy the "URI" connection string
+4. Add it to your `.env.local` as `DATABASE_URL`
 
 ## Installation
 
@@ -59,61 +72,77 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-## Database Setup
+## Database Management
 
-The application uses Supabase with two main tables:
+### Initial Setup
 
-- `comedians`: Stores comedian signups
-- `audience`: Stores audience member signups
+1. Create two Supabase projects:
+   - One for development
+   - One for production
 
-Each table should have the following columns:
-- `id` (uuid, primary key)
-- `email` (text)
-- `created_at` (timestamp with timezone)
+2. Get your database connection strings:
+   - Go to your Supabase project dashboard
+   - Navigate to Project Settings > Database
+   - Find the "Connection string" section
+   - Copy the "URI" connection string
+   - Add it to your `.env.local` as `DATABASE_URL`
 
-### Setting up Supabase Database
+3. Initialize the database:
+```bash
+# For development
+npm run db:push
 
-1. Create a new project in Supabase
-2. Go to the SQL Editor in your Supabase dashboard
-3. Run the following SQL commands to create the required tables and structure:
-
-```sql
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Create comedians table
-CREATE TABLE comedians (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Create audience table
-CREATE TABLE audience (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Create indexes for better query performance
-CREATE INDEX comedians_email_idx ON comedians(email);
-CREATE INDEX audience_email_idx ON audience(email);
-
--- Set up Row Level Security (RLS)
-ALTER TABLE comedians ENABLE ROW LEVEL SECURITY;
-ALTER TABLE audience ENABLE ROW LEVEL SECURITY;
-
--- Create policies to allow all operations (you can restrict these based on your needs)
-CREATE POLICY "Allow all operations on comedians" ON comedians
-    FOR ALL USING (true);
-
-CREATE POLICY "Allow all operations on audience" ON audience
-    FOR ALL USING (true);
+# For production
+npm run db:push:prod
 ```
 
-4. After running these commands, you can get your project URL and anon key from:
-   - Project Settings > API > Project URL
-   - Project Settings > API > Project API keys > anon/public
+### Managing Migrations
+
+The project uses Supabase migrations to manage database changes. Migrations are stored in the `supabase/migrations` directory.
+
+#### Development Workflow
+
+1. Make changes to your database schema in the `supabase/migrations` directory
+2. Test changes locally:
+```bash
+# Push changes to development database
+npm run db:push
+
+# If needed, reset development database
+npm run db:reset
+```
+
+#### Production Deployment
+
+1. After testing in development, deploy to production:
+```bash
+# Push changes to production database
+npm run db:push:prod
+```
+
+2. If needed, you can pull the current production schema:
+```bash
+npm run db:pull:prod
+```
+
+### Available Database Commands
+
+- `npm run db:push` - Push migrations to development database
+- `npm run db:push:prod` - Push migrations to production database
+- `npm run db:pull` - Pull current schema from development database
+- `npm run db:pull:prod` - Pull current schema from production database
+- `npm run db:reset` - Reset development database
+- `npm run db:reset:prod` - Reset production database
+- `npm run db:status` - Check migration status in development
+- `npm run db:status:prod` - Check migration status in production
+
+### Best Practices
+
+1. Always develop and test migrations in the development environment first
+2. Use `db:pull` to get the latest schema from production before making changes
+3. Use `db:push:prod` only when you're sure the changes are ready for production
+4. Keep your `.env` files secure and never commit them to version control
+5. Consider using a staging environment between development and production for larger projects
 
 ## Deployment
 

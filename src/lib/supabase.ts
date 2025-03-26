@@ -15,11 +15,13 @@ export const supabase = createClient(
 export type Comedian = {
   id: string;
   email: string;
+  full_name?: string;
   created_at: string;
 };
 
 export type Audience = {
   id: string;
   email: string;
+  number_of_people: number;
   created_at: string;
 }; 

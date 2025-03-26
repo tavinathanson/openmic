@@ -1,14 +1,65 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type SignupType = 'comedian' | 'audience';
 
 export default function SignupForm() {
   const [email, setEmail] = useState('');
   const [type, setType] = useState<SignupType>('comedian');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'validating' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [numberOfPeople, setNumberOfPeople] = useState(1);
+  const [existingName, setExistingName] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [showNameField, setShowNameField] = useState(false);
+
+  // Debounced email validation
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!email || !type) return;
+      
+      setIsValidating(true);
+      try {
+        const response = await fetch('/api/validate-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, type }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to validate email');
+        }
+
+        if (data.exists) {
+          if (type === 'comedian' && data.full_name) {
+            setExistingName(data.full_name);
+            setFullName(data.full_name);
+            setShowNameField(false);
+          } else if (type === 'comedian') {
+            setShowNameField(true);
+            setExistingName(null);
+            setFullName('');
+          }
+        } else {
+          setExistingName(null);
+          setFullName('');
+          setShowNameField(type === 'comedian');
+        }
+      } catch (error) {
+        console.error('Email validation error:', error);
+      } finally {
+        setIsValidating(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [email, type]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,7 +72,12 @@ export default function SignupForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, type }),
+        body: JSON.stringify({
+          email,
+          type,
+          ...(type === 'comedian' ? { full_name: fullName } : {}),
+          ...(type === 'audience' ? { number_of_people: numberOfPeople } : {})
+        }),
       });
 
       const data = await response.json();
@@ -33,11 +89,18 @@ export default function SignupForm() {
       setStatus('success');
       setMessage('Successfully signed up! Check your email for confirmation.');
       setEmail('');
+      setFullName('');
+      setNumberOfPeople(1);
+      setExistingName(null);
+      setShowNameField(false);
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'An error occurred. Please try again.');
     }
   }
+
+  const isFormValid = email && 
+    (!type || type === 'audience' || (type === 'comedian' && (existingName || fullName)));
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -76,20 +139,74 @@ export default function SignupForm() {
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
             Email
           </label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your email"
-          />
+          <div className="relative">
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (!e.target.value) {
+                  setFullName('');
+                  setExistingName(null);
+                  setShowNameField(false);
+                }
+              }}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your email"
+            />
+            {isValidating && (
+              <div className="absolute right-3 top-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              </div>
+            )}
+          </div>
         </div>
+
+        {type === 'comedian' && existingName && (
+          <div className="p-3 bg-green-50 text-green-700 rounded-md">
+            Found existing name: {existingName}
+          </div>
+        )}
+
+        {type === 'comedian' && showNameField && (
+          <div>
+            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+              Full Name
+            </label>
+            <input
+              type="text"
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your full name"
+            />
+          </div>
+        )}
+
+        {type === 'audience' && (
+          <div>
+            <label htmlFor="numberOfPeople" className="block text-sm font-medium text-gray-700 mb-2">
+              Number of People
+            </label>
+            <input
+              type="number"
+              id="numberOfPeople"
+              value={numberOfPeople}
+              onChange={(e) => setNumberOfPeople(Math.max(1, parseInt(e.target.value) || 1))}
+              min="1"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        )}
 
         <button
           type="submit"
-          disabled={status === 'loading'}
+          disabled={status === 'loading' || !isFormValid}
           className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
         >
           {status === 'loading' ? 'Signing up...' : 'Sign Up'}
