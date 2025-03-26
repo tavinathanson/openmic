@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
 
 type SignupType = 'comedian' | 'audience';
 
@@ -17,26 +16,19 @@ export default function SignupForm() {
     setMessage('');
 
     try {
-      // Check if comedian slots are full
-      if (type === 'comedian') {
-        const { count } = await supabase
-          .from('comedians')
-          .select('*', { count: 'exact', head: true });
-        
-        const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
-        if ((count || 0) >= maxSlots) {
-          throw new Error('Sorry, all comedian slots are full!');
-        }
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, type }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to sign up');
       }
-
-      // Insert the signup
-      const { data, error } = await supabase
-        .from(type === 'comedian' ? 'comedians' : 'audience')
-        .insert([{ email }])
-        .select()
-        .single();
-
-      if (error) throw error;
 
       setStatus('success');
       setMessage('Successfully signed up! Check your email for confirmation.');
