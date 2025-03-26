@@ -95,12 +95,16 @@ export default function SignupForm() {
       setShowNameField(false);
     } catch (error) {
       setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'An error occurred. Please try again.');
+      // Don't show error message if user is already signed up
+      if (!existingName) {
+        setMessage(error instanceof Error ? error.message : 'An error occurred. Please try again.');
+      }
     }
   }
 
   const isFormValid = email && 
-    (!type || type === 'audience' || (type === 'comedian' && (existingName || fullName)));
+    (!type || type === 'audience' || (type === 'comedian' && (existingName || fullName))) &&
+    !existingName;
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -146,9 +150,9 @@ export default function SignupForm() {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
+                setExistingName(null);
                 if (!e.target.value) {
                   setFullName('');
-                  setExistingName(null);
                   setShowNameField(false);
                 }
               }}
@@ -166,14 +170,23 @@ export default function SignupForm() {
 
         {type === 'comedian' && existingName && (
           <div className="p-3 bg-green-50 text-green-700 rounded-md">
-            Found existing name: {existingName}
+            {existingName}: you're already signed up! See you there!
           </div>
         )}
 
-        {type === 'comedian' && showNameField && (
+        {type === 'comedian' && isValidating && (
+          <div className="p-3 bg-gray-50 text-gray-700 rounded-md">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+              <span>Validating email...</span>
+            </div>
+          </div>
+        )}
+
+        {type === 'comedian' && !isValidating && showNameField && (
           <div>
             <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name
+              Your Full Name or Stage Name
             </label>
             <input
               type="text"
@@ -182,7 +195,7 @@ export default function SignupForm() {
               onChange={(e) => setFullName(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your full name"
+              placeholder="Enter your full name or stage name"
             />
           </div>
         )}
