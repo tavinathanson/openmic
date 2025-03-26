@@ -1,5 +1,6 @@
 import SignupForm from '@/components/SignupForm';
 import SlotCounter from '@/components/SlotCounter';
+import OpenMicDate from '@/components/OpenMicDate';
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
         </div>
 
         <div className="space-y-8">
+          <OpenMicDate />
           <SlotCounter />
           <SignupForm />
         </div>

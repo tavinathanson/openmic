@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function SlotCounter() {
   const [remainingSlots, setRemainingSlots] = useState<number>(0);
+  const [currentDate, setCurrentDate] = useState<string | null>(null);
   const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
 
   useEffect(() => {
@@ -25,15 +26,48 @@ export default function SlotCounter() {
   }, []);
 
   async function fetchSlots() {
+    // Get the active open mic date
+    const { data: dateData, error: dateError } = await supabase
+      .from('open_mic_dates')
+      .select('*')
+      .eq('is_active', true)
+      .order('date', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (dateError || !dateData) {
+      setRemainingSlots(0);
+      setCurrentDate(null);
+      return;
+    }
+
+    // Format the date with UTC timezone
+    const dateObj = new Date(dateData.date + 'T00:00:00');
+    const formattedDate = dateObj.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC' // Use UTC to prevent timezone shifts
+    });
+    setCurrentDate(formattedDate);
+
+    // Get the count of comedians for this date
     const { count } = await supabase
       .from('comedians')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .eq('date_id', dateData.id);
     
     setRemainingSlots(maxSlots - (count || 0));
   }
 
   return (
     <div className="text-center p-4 bg-gray-100 rounded-lg">
+      {currentDate && (
+        <h3 className="text-lg text-gray-600 mb-2">
+          For {currentDate}
+        </h3>
+      )}
       <h2 className="text-2xl font-bold text-gray-800">
         {remainingSlots} Comedian Slots Left
       </h2>

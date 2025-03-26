@@ -20,26 +20,63 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if comedian slots are full
+    // Get the active open mic date
+    const { data: dateData, error: dateError } = await supabase
+      .from('open_mic_dates')
+      .select('id')
+      .eq('is_active', true)
+      .order('date', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (dateError || !dateData) {
+      return NextResponse.json(
+        { error: 'No active open mic date found' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user is already signed up for this date
+    const { data: existingSignup, error: existingError } = await supabase
+      .from(type === 'comedian' ? 'comedians' : 'audience')
+      .select('*')
+      .eq('email', email)
+      .eq('date_id', dateData.id)
+      .single();
+
+    if (existingError && existingError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      throw existingError;
+    }
+
+    if (existingSignup) {
+      return NextResponse.json(
+        { error: 'You are already signed up for this date' },
+        { status: 400 }
+      );
+    }
+
+    // Check if comedian slots are full for this date
     if (type === 'comedian') {
       const { count } = await supabase
         .from('comedians')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('date_id', dateData.id);
       
       const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
       if ((count || 0) >= maxSlots) {
         return NextResponse.json(
-          { error: 'Sorry, all comedian slots are full!' },
+          { error: 'Sorry, all comedian slots are full for this date!' },
           { status: 400 }
         );
       }
     }
 
-    // Insert the signup
+    // Insert the signup with the date_id
     const { data, error } = await supabase
       .from(type === 'comedian' ? 'comedians' : 'audience')
       .insert([{
         email,
+        date_id: dateData.id,
         ...(type === 'comedian' ? { full_name } : {}),
         ...(type === 'audience' ? { number_of_people: number_of_people || 1 } : {})
       }])

@@ -14,6 +14,7 @@ export default function SignupForm() {
   const [existingName, setExistingName] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [showNameField, setShowNameField] = useState(false);
+  const [alreadySignedUp, setAlreadySignedUp] = useState(false);
 
   // Debounced email validation
   useEffect(() => {
@@ -46,10 +47,12 @@ export default function SignupForm() {
             setExistingName(null);
             setFullName('');
           }
+          setAlreadySignedUp(data.already_signed_up);
         } else {
           setExistingName(null);
           setFullName('');
           setShowNameField(type === 'comedian');
+          setAlreadySignedUp(false);
         }
       } catch (error) {
         console.error('Email validation error:', error);
@@ -75,7 +78,7 @@ export default function SignupForm() {
         body: JSON.stringify({
           email,
           type,
-          ...(type === 'comedian' ? { full_name: fullName } : {}),
+          ...(type === 'comedian' ? { full_name: existingName || fullName } : {}),
           ...(type === 'audience' ? { number_of_people: numberOfPeople } : {})
         }),
       });
@@ -93,18 +96,20 @@ export default function SignupForm() {
       setNumberOfPeople(1);
       setExistingName(null);
       setShowNameField(false);
+      setAlreadySignedUp(true);
     } catch (error) {
       setStatus('error');
-      // Don't show error message if user is already signed up
-      if (!existingName) {
-        setMessage(error instanceof Error ? error.message : 'An error occurred. Please try again.');
+      setMessage(error instanceof Error ? error.message : 'An error occurred. Please try again.');
+      // If the error indicates already signed up, update the state
+      if (error instanceof Error && error.message.includes('already signed up')) {
+        setAlreadySignedUp(true);
       }
     }
   }
 
   const isFormValid = email && 
     (!type || type === 'audience' || (type === 'comedian' && (existingName || fullName))) &&
-    !existingName;
+    !alreadySignedUp;
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -168,9 +173,15 @@ export default function SignupForm() {
           </div>
         </div>
 
-        {type === 'comedian' && existingName && (
+        {type === 'comedian' && existingName && alreadySignedUp && (
           <div className="p-3 bg-green-50 text-green-700 rounded-md">
-            {existingName}: you're already signed up! See you there!
+            {existingName}: you're already signed up for this date! See you there!
+          </div>
+        )}
+
+        {type === 'comedian' && existingName && !alreadySignedUp && (
+          <div className="p-3 bg-blue-50 text-blue-700 rounded-md">
+            Name: {existingName}
           </div>
         )}
 
@@ -219,10 +230,10 @@ export default function SignupForm() {
 
         <button
           type="submit"
-          disabled={status === 'loading' || !isFormValid}
+          disabled={status === 'loading' || !isFormValid || alreadySignedUp}
           className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
         >
-          {status === 'loading' ? 'Signing up...' : 'Sign Up'}
+          {status === 'loading' ? 'Signing up...' : alreadySignedUp ? 'Already Signed Up' : 'Sign Up'}
         </button>
 
         {message && (

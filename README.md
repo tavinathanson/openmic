@@ -10,6 +10,8 @@ A modern web application for managing comedy open mic signups. Built with Next.j
 - Easy signup cancellation via email link
 - Responsive design with dark mode support
 - Real-time updates using Supabase subscriptions
+- Date-specific open mic events and signups
+- Active date management system
 
 ## Prerequisites
 
@@ -95,6 +97,29 @@ npm run db:push
 # For production
 npm run db:push:prod
 ```
+
+### Managing Open Mic Dates
+
+The application now supports multiple open mic dates. To manage dates:
+
+1. Access your Supabase database
+2. Navigate to the `open_mic_dates` table
+3. Insert a new date:
+```sql
+INSERT INTO open_mic_dates (date, is_active) VALUES ('2024-03-30', true);
+```
+
+To deactivate a date:
+```sql
+UPDATE open_mic_dates SET is_active = false WHERE id = 'your_date_id';
+```
+
+The system will:
+- Show the next active date on the main page
+- Only allow signups for the active date
+- Track slot availability per date
+- Show remaining slots specific to the current date
+- Validate email signups against the current date
 
 ### Managing Migrations
 
