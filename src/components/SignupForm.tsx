@@ -181,7 +181,7 @@ export default function SignupForm() {
       </div>
 
       {type === 'comedian' && existingName && alreadySignedUp && (
-        <div className="p-4 bg-accent-light/5 text-accent-dark rounded-lg border border-accent-light/10">
+        <div className="p-4 bg-primary-light/10 text-primary-dark rounded-lg border border-primary-light/20">
           {existingName}: you're already signed up for this date! See you there!
         </div>
       )}
