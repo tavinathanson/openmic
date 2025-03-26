@@ -194,12 +194,52 @@ npm run db:pull:prod
 
 ## Deployment
 
-The application is optimized for deployment on Vercel:
+The application is optimized for deployment on Vercel. Here's a detailed guide:
 
-1. Push your code to GitHub
-2. Import your repository on Vercel
-3. Add your environment variables in the Vercel project settings
-4. Deploy!
+1. Push your code to GitHub if you haven't already:
+```bash
+git add .
+git commit -m "Initial commit"
+git push origin main
+```
+
+2. Deploy to Vercel:
+   - Go to [Vercel](https://vercel.com) and sign in with your GitHub account
+   - Click "Add New Project"
+   - Import your repository
+   - Select the repository from the list
+   - Vercel will automatically detect that it's a Next.js project
+   - Click "Deploy"
+
+3. Configure Environment Variables:
+   - In your Vercel project settings, go to the "Environment Variables" tab
+   - Add all the variables from your `.env.local` file:
+     ```
+     NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+     NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+     DATABASE_URL=your_database_url
+     RESEND_API_KEY=your_resend_api_key
+     NEXT_PUBLIC_APP_URL=https://your-vercel-domain.vercel.app
+     NEXT_PUBLIC_MAX_COMEDIAN_SLOTS=20
+     ```
+   - Make sure to update `NEXT_PUBLIC_APP_URL` to your Vercel deployment URL
+
+4. Database Setup:
+   - Ensure your Supabase database is properly configured
+   - Run the database migrations on your production database:
+     ```bash
+     npm run db:push:prod
+     ```
+
+5. Finalize Deployment:
+   - Click "Deploy" in Vercel
+   - Wait for the build to complete
+   - Your application will be live at `https://your-project-name.vercel.app`
+
+For subsequent deployments:
+- Simply push to your main branch
+- Vercel will automatically detect the changes and deploy
+- Make sure to update any environment variables if needed
 
 ## Contributing
 
@@ -207,4 +247,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
