@@ -10,7 +10,7 @@ export default function SignupForm() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'validating' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [fullName, setFullName] = useState('');
-  const [numberOfPeople, setNumberOfPeople] = useState(1);
+  const [numberOfPeople, setNumberOfPeople] = useState<string>('1');
   const [existingName, setExistingName] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [showNameField, setShowNameField] = useState(false);
@@ -69,6 +69,14 @@ export default function SignupForm() {
     setStatus('loading');
     setMessage('');
 
+    // Validate number of people
+    const numPeople = parseInt(numberOfPeople);
+    if (isNaN(numPeople) || numPeople < 1) {
+      setStatus('error');
+      setMessage('Number of people must be at least 1');
+      return;
+    }
+
     try {
       const response = await fetch('/api/signup', {
         method: 'POST',
@@ -79,7 +87,7 @@ export default function SignupForm() {
           email,
           type,
           ...(type === 'comedian' ? { full_name: existingName || fullName } : {}),
-          ...(type === 'audience' ? { number_of_people: numberOfPeople } : {})
+          ...(type === 'audience' ? { number_of_people: numPeople } : {})
         }),
       });
 
@@ -93,7 +101,7 @@ export default function SignupForm() {
       setMessage('Successfully signed up! Check your email for confirmation.');
       setEmail('');
       setFullName('');
-      setNumberOfPeople(1);
+      setNumberOfPeople('1');
       setExistingName(null);
       setShowNameField(false);
       setAlreadySignedUp(true);
@@ -219,7 +227,7 @@ export default function SignupForm() {
             type="number"
             id="numberOfPeople"
             value={numberOfPeople}
-            onChange={(e) => setNumberOfPeople(Math.max(1, parseInt(e.target.value) || 1))}
+            onChange={(e) => setNumberOfPeople(e.target.value)}
             min="1"
             required
             className="w-full px-4 py-2.5 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
