@@ -58,7 +58,7 @@ export default function EventInfo() {
         <div className="flex-grow text-center md:text-left space-y-4">
           <div>
             <h2 className="text-2xl font-heading font-semibold text-foreground mb-2">
-              Next Open Mic Night
+              Next Open Mic at <a href="https://g.co/kgs/8kvp2Gx" target="_blank" className="text-primary hover:underline">Crave</a>
             </h2>
             <p className="text-lg text-muted">
               {date}
@@ -71,6 +71,12 @@ export default function EventInfo() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>Arrive by 7:15 PM</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-primary bg-blue-50 px-3 py-1.5 rounded-full">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Show starts at 7:30 PM</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-primary bg-blue-50 px-3 py-1.5 rounded-full">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
