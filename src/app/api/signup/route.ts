@@ -36,16 +36,43 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user is already signed up for this date
-    const { data: existingSignup, error: existingError } = await supabase
-      .from(type === 'comedian' ? 'comedians' : 'audience')
+    // Start a transaction
+    const { data: personData, error: personError } = await supabase
+      .from('people')
       .select('*')
       .eq('email', email)
-      .eq('date_id', dateData.id)
       .single();
 
-    if (existingError && existingError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-      throw existingError;
+    let personId: string;
+    if (personError && personError.code === 'PGRST116') {
+      // Person doesn't exist, create them
+      const { data: newPerson, error: createError } = await supabase
+        .from('people')
+        .insert([{
+          email,
+          full_name: type === 'comedian' ? full_name : null
+        }])
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      personId = newPerson.id;
+    } else if (personError) {
+      throw personError;
+    } else {
+      personId = personData.id;
+    }
+
+    // Check if person is already signed up for this date
+    const { data: existingSignup, error: signupError } = await supabase
+      .from('sign_ups')
+      .select('*')
+      .eq('person_id', personId)
+      .eq('open_mic_date_id', dateData.id)
+      .single();
+
+    if (signupError && signupError.code !== 'PGRST116') {
+      throw signupError;
     }
 
     if (existingSignup) {
@@ -58,9 +85,9 @@ export async function POST(request: Request) {
     // Check if comedian slots are full for this date
     if (type === 'comedian') {
       const { count } = await supabase
-        .from('comedians')
+        .from('sign_ups')
         .select('*', { count: 'exact', head: true })
-        .eq('date_id', dateData.id);
+        .eq('open_mic_date_id', dateData.id);
       
       const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
       if ((count || 0) >= maxSlots) {
@@ -71,23 +98,22 @@ export async function POST(request: Request) {
       }
     }
 
-    // Insert the signup with the date_id
-    const { data, error } = await supabase
-      .from(type === 'comedian' ? 'comedians' : 'audience')
+    // Create the signup
+    const { data: signupData, error: createSignupError } = await supabase
+      .from('sign_ups')
       .insert([{
-        email,
-        date_id: dateData.id,
-        ...(type === 'comedian' ? { full_name } : {}),
-        ...(type === 'audience' ? { number_of_people: number_of_people || 1 } : {})
+        person_id: personId,
+        open_mic_date_id: dateData.id,
+        number_of_people: type === 'comedian' ? 1 : (number_of_people || 1)
       }])
       .select()
       .single();
 
-    if (error) throw error;
+    if (createSignupError) throw createSignupError;
 
     // Send confirmation email
     try {
-      await sendConfirmationEmail(email, type, data.id);
+      await sendConfirmationEmail(email, type, signupData.id);
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
       // Don't throw here, we still want to return success since the signup worked

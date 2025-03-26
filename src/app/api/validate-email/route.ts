@@ -35,35 +35,35 @@ export async function POST(request: Request) {
       );
     }
 
-    // First, check if the email exists in the database at all
-    const { data: existingData, error: existingError } = await supabase
-      .from(type === 'comedian' ? 'comedians' : 'audience')
+    // First, check if the email exists in the people table
+    const { data: personData, error: personError } = await supabase
+      .from('people')
       .select('*')
       .eq('email', email)
       .single();
 
-    if (existingError && existingError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-      throw existingError;
+    if (personError && personError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      throw personError;
     }
 
-    // If email exists, check if it's already signed up for this date
-    if (existingData) {
-      const { data: currentDateData, error: currentDateError } = await supabase
-        .from(type === 'comedian' ? 'comedians' : 'audience')
+    // If person exists, check if they're already signed up for this date
+    if (personData) {
+      const { data: signupData, error: signupError } = await supabase
+        .from('sign_ups')
         .select('*')
-        .eq('email', email)
-        .eq('date_id', dateData.id)
+        .eq('person_id', personData.id)
+        .eq('open_mic_date_id', dateData.id)
         .single();
 
-      if (currentDateError && currentDateError.code !== 'PGRST116') {
-        throw currentDateError;
+      if (signupError && signupError.code !== 'PGRST116') {
+        throw signupError;
       }
 
       return NextResponse.json({
         exists: true,
-        full_name: existingData.full_name,
-        number_of_people: existingData.number_of_people,
-        already_signed_up: !!currentDateData
+        full_name: personData.full_name,
+        number_of_people: signupData?.number_of_people || 1,
+        already_signed_up: !!signupData
       });
     }
 

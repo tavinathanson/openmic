@@ -14,8 +14,8 @@ export default function SlotCounter() {
 
     // Subscribe to changes
     const subscription = supabase
-      .channel('comedians')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comedians' }, () => {
+      .channel('sign_ups')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sign_ups' }, () => {
         fetchSlots();
       })
       .subscribe();
@@ -52,31 +52,25 @@ export default function SlotCounter() {
     });
     setCurrentDate(formattedDate);
 
-    // Get the count of comedians for this date
+    // Get the count of signups for this date
     const { count } = await supabase
-      .from('comedians')
+      .from('sign_ups')
       .select('*', { count: 'exact', head: true })
-      .eq('date_id', dateData.id);
+      .eq('open_mic_date_id', dateData.id);
     
     setRemainingSlots(maxSlots - (count || 0));
   }
 
+  if (!currentDate) return null;
+
   return (
-    <div className="text-center p-4 bg-gray-100 rounded-lg">
-      {currentDate && (
-        <h3 className="text-lg text-gray-600 mb-2">
-          For {currentDate}
-        </h3>
-      )}
-      <h2 className="text-2xl font-bold text-gray-800">
-        {remainingSlots} Comedian Slots Left
+    <div className="text-center mb-6">
+      <h2 className="text-2xl font-semibold text-gray-800">
+        Remaining Comedian Slots
       </h2>
-      <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-        <div
-          className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
-          style={{ width: `${(remainingSlots / maxSlots) * 100}%` }}
-        ></div>
-      </div>
+      <p className="text-xl text-gray-600 mt-2">
+        {remainingSlots} of {maxSlots} slots available
+      </p>
     </div>
   );
 } 

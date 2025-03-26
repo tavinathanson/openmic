@@ -98,9 +98,32 @@ npm run db:push
 npm run db:push:prod
 ```
 
+### Database Schema
+
+The application uses three main tables:
+
+1. `open_mic_dates` - Manages available open mic dates
+   - `id`: UUID (primary key)
+   - `date`: DATE (when the open mic is)
+   - `is_active`: BOOLEAN (whether this date is currently active)
+   - `created_at`: TIMESTAMPTZ
+
+2. `people` - Stores information about all users
+   - `id`: UUID (primary key)
+   - `email`: TEXT (unique)
+   - `full_name`: TEXT (optional)
+   - `created_at`: TIMESTAMPTZ
+
+3. `sign_ups` - Tracks who signed up for which date
+   - `id`: UUID (primary key)
+   - `person_id`: UUID (references people.id)
+   - `open_mic_date_id`: UUID (references open_mic_dates.id)
+   - `number_of_people`: INTEGER (defaults to 1)
+   - `created_at`: TIMESTAMPTZ
+
 ### Managing Open Mic Dates
 
-The application now supports multiple open mic dates. To manage dates:
+The application supports multiple open mic dates. To manage dates:
 
 1. Access your Supabase database
 2. Navigate to the `open_mic_dates` table

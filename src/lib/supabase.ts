@@ -12,16 +12,17 @@ export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-export type Comedian = {
+export type Person = {
   id: string;
   email: string;
   full_name?: string;
   created_at: string;
 };
 
-export type Audience = {
+export type SignUp = {
   id: string;
-  email: string;
+  person_id: string;
+  open_mic_date_id: string;
   number_of_people: number;
   created_at: string;
 }; 

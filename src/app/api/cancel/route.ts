@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   try {
     const { error } = await supabase
-      .from(type === 'comedian' ? 'comedians' : 'audience')
+      .from('sign_ups')
       .delete()
       .eq('id', id);
 
