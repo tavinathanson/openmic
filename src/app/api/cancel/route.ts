@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -21,6 +21,7 @@ export async function GET(request: Request) {
   }
 
   try {
+    const supabase = await createServerSupabaseClient();
     const { error } = await supabase
       .from('sign_ups')
       .delete()

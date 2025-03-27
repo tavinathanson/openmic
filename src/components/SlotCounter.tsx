@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 
 export default function SlotCounter() {
   const [remainingSlots, setRemainingSlots] = useState<number>(0);
   const [currentDate, setCurrentDate] = useState<string | null>(null);
   const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
+  const supabase = createClient();
 
   useEffect(() => {
     // Initial fetch
@@ -23,7 +24,7 @@ export default function SlotCounter() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   async function fetchSlots() {
     // Get the active open mic date

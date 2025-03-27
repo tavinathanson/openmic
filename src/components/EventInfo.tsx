@@ -36,7 +36,7 @@ export default function EventInfo() {
     }
 
     fetchDate();
-  }, []);
+  }, [supabase]);
 
   if (!date) return null;
 
@@ -58,7 +58,7 @@ export default function EventInfo() {
         <div className="flex-grow text-center md:text-left space-y-4">
           <div>
             <h2 className="text-2xl font-heading font-semibold text-foreground mb-2">
-              Next Open Mic at <a href="https://maps.app.goo.gl/pM9FxDS2vsw3QuGbA" target="_blank" className="text-primary hover:underline">Crave Nature's Eatery</a>
+              Next Open Mic at <a href="https://maps.app.goo.gl/pM9FxDS2vsw3QuGbA" target="_blank" className="text-primary hover:underline">Crave Nature&apos;s Eatery</a>
             </h2>
             <p className="text-lg text-muted">
               {date}

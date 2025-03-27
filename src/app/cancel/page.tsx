@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 export default function CancelPage() {
   const searchParams = useSearchParams();
@@ -57,12 +58,12 @@ export default function CancelPage() {
                 Signup Cancelled
               </h1>
               <p className="text-gray-600">{message}</p>
-              <a
+              <Link
                 href="/"
                 className="mt-6 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Return to Home
-              </a>
+              </Link>
             </>
           )}
 
@@ -73,12 +74,12 @@ export default function CancelPage() {
                 Error
               </h1>
               <p className="text-gray-600">{message}</p>
-              <a
+              <Link
                 href="/"
                 className="mt-6 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Return to Home
-              </a>
+              </Link>
             </>
           )}
         </div>
