@@ -14,15 +14,12 @@ export async function sendConfirmationEmail(email: string, type: 'comedian' | 'a
   const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=${type}`;
   
   await resend.emails.send({
-    from: `Open Mic <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
+    from: `Tavi Nathanson <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
     to: email,
-    subject: 'Open Mic Signup Confirmation',
+    subject: 'Crave Laughs Open Mic Signup Confirmation',
     html: `
-      <h1>Welcome to the Open Mic!</h1>
-      <p>Thank you for signing up as a ${type}.</p>
-      <p>Your spot has been reserved.</p>
-      <p>If you need to cancel, please click the link below:</p>
-      <a href="${cancelUrl}">Cancel Signup</a>
+      <p>Thank you for signing up as a ${type}. You're good to go!</p>
+      <p>If you need to cancel, email me or just <a href="${cancelUrl}">click here</a>.</p>
     `,
   });
 }
@@ -31,14 +28,12 @@ export async function sendReminderEmail(email: string, type: 'comedian' | 'audie
   const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=${type}`;
   
   await resend.emails.send({
-    from: `Open Mic <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
+    from: `Tavi Nathanson <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
     to: email,
-    subject: 'Open Mic Reminder',
+    subject: 'Crave Laughs Open Mic Reminder',
     html: `
-      <h1>Open Mic Reminder</h1>
-      <p>This is a reminder that you're signed up for the Open Mic as a ${type}.</p>
-      <p>If you need to cancel, please click the link below:</p>
-      <a href="${cancelUrl}">Cancel Signup</a>
+      <p>Friendly reminder that you're signed up for the Crave Laughs Open Mic as a ${type}.</p>
+      <p>If you need to cancel, email me or just <a href="${cancelUrl}">click here</a>.</p>
     `,
   });
 } 

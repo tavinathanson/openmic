@@ -10,6 +10,42 @@ export default function SlotCounter() {
   const supabase = createClient();
 
   useEffect(() => {
+    async function fetchSlots() {
+      // Get the active open mic date
+      const { data: dateData, error: dateError } = await supabase
+        .from('open_mic_dates')
+        .select('*')
+        .eq('is_active', true)
+        .order('date', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (dateError || !dateData) {
+        setRemainingSlots(0);
+        setCurrentDate(null);
+        return;
+      }
+
+      // Format the date with UTC timezone
+      const dateObj = new Date(dateData.date + 'T00:00:00');
+      const formattedDate = dateObj.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC' // Use UTC to prevent timezone shifts
+      });
+      setCurrentDate(formattedDate);
+
+      // Get the count of signups for this date
+      const { count } = await supabase
+        .from('sign_ups')
+        .select('*', { count: 'exact', head: true })
+        .eq('open_mic_date_id', dateData.id);
+      
+      setRemainingSlots(maxSlots - (count || 0));
+    }
+
     // Initial fetch
     fetchSlots();
 
@@ -24,43 +60,7 @@ export default function SlotCounter() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
-
-  async function fetchSlots() {
-    // Get the active open mic date
-    const { data: dateData, error: dateError } = await supabase
-      .from('open_mic_dates')
-      .select('*')
-      .eq('is_active', true)
-      .order('date', { ascending: true })
-      .limit(1)
-      .single();
-
-    if (dateError || !dateData) {
-      setRemainingSlots(0);
-      setCurrentDate(null);
-      return;
-    }
-
-    // Format the date with UTC timezone
-    const dateObj = new Date(dateData.date + 'T00:00:00');
-    const formattedDate = dateObj.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC' // Use UTC to prevent timezone shifts
-    });
-    setCurrentDate(formattedDate);
-
-    // Get the count of signups for this date
-    const { count } = await supabase
-      .from('sign_ups')
-      .select('*', { count: 'exact', head: true })
-      .eq('open_mic_date_id', dateData.id);
-    
-    setRemainingSlots(maxSlots - (count || 0));
-  }
+  }, [supabase, maxSlots]);
 
   if (!currentDate) return null;
 

@@ -4,7 +4,7 @@ import { sendConfirmationEmail } from '@/lib/resend';
 
 export async function POST(request: Request) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { email, type, full_name, number_of_people } = await request.json();
 
     if (!email || !type) {
