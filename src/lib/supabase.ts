@@ -16,14 +16,14 @@ export const createServerSupabaseClient = async () => {
           try {
             cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // Handle cookie errors
+            console.error('Cookie error:', error);
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // Handle cookie errors
+            console.error('Cookie error:', error);
           }
         },
       },
