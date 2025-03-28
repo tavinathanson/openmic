@@ -258,7 +258,7 @@ export default function SignupForm() {
         <div
           className={`p-4 rounded-lg border ${
             status === 'success'
-              ? 'bg-accent-light/5 text-accent-dark border-accent-light/10'
+              ? 'bg-green-50 text-green-700 border-green-100'
               : 'bg-red-50 text-red-700 border-red-100'
           }`}
         >
