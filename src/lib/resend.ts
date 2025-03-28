@@ -10,6 +10,10 @@ if (!process.env.NEXT_PUBLIC_APP_EMAIL) {
 
 export const resend = new Resend(process.env.RESEND_API_KEY);
 
+const SENDER_NAME = process.env.NODE_ENV === 'development' 
+  ? 'Tavi Nathanson Test Account'
+  : 'Tavi Nathanson';
+
 export async function sendConfirmationEmail(
   email: string, 
   type: 'comedian' | 'audience', 
@@ -37,7 +41,7 @@ export async function sendConfirmationEmail(
   const audienceMessage = `Thank you for signing up to attend the Crave Laughs open mic night at ${time} ${dateText}! See you there!`;
   
   await resend.emails.send({
-    from: `Tavi Nathanson <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
+    from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
     to: email,
     subject: 'Crave Laughs Open Mic Signup Confirmation',
     html: `<p>${type === 'comedian' ? comedianMessage : audienceMessage}</p>`,
@@ -71,7 +75,7 @@ export async function sendReminderEmail(
   const audienceMessage = `Friendly reminder that the Crave Laughs open mic night is at ${time} ${dateText}! See you there!`;
   
   await resend.emails.send({
-    from: `Tavi Nathanson <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
+    from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
     to: email,
     subject: 'Crave Laughs Open Mic Reminder',
     html: `<p>${type === 'comedian' ? comedianMessage : audienceMessage}</p>`,
