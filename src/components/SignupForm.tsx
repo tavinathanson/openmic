@@ -116,7 +116,8 @@ export default function SignupForm() {
   }
 
   const isFormValid = email && 
-    (!type || type === 'audience' || (type === 'comedian' && (existingName || fullName))) &&
+    (existingName || (fullName && fullName.trim().length > 0)) &&
+    numberOfPeople &&
     !alreadySignedUp;
 
   return (
