@@ -39,7 +39,7 @@ export async function sendConfirmationEmail(
     ? 'tonight' 
     : isTomorrow(eventDate)
     ? 'tomorrow'
-    : `on ${format(eventDate, 'MMMM d, yyyy')}`;
+    : `on ${format(eventDate, 'MMMM d')}`;
 
   // Format time in the specified timezone
   const [hours, minutes] = time.split(':');
@@ -77,7 +77,7 @@ export async function sendReminderEmail(
     ? 'tonight' 
     : isTomorrow(eventDate)
     ? 'tomorrow'
-    : `on ${format(eventDate, 'MMMM d, yyyy')}`;
+    : `on ${format(eventDate, 'MMMM d')}`;
 
   // Format time in the specified timezone
   const [hours, minutes] = time.split(':');
