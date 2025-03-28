@@ -5,13 +5,14 @@ import { createClient } from '@/utils/supabase/client';
 
 export default function EventInfo() {
   const [date, setDate] = useState<string | null>(null);
+  const [time, setTime] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
     async function fetchDate() {
       const { data, error } = await supabase
         .from('open_mic_dates')
-        .select('date')
+        .select('date, time')
         .eq('is_active', true)
         .order('date', { ascending: true })
         .limit(1)
@@ -32,13 +33,24 @@ export default function EventInfo() {
           timeZone: 'UTC'
         });
         setDate(formattedDate);
+        
+        // Parse the time from the database
+        const [hours, minutes] = data.time.split(':');
+        const timeObj = new Date();
+        timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
+        const formattedTime = timeObj.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+        setTime(formattedTime);
       }
     }
 
     fetchDate();
   }, [supabase]);
 
-  if (!date) return null;
+  if (!date || !time) return null;
 
   const dateObj = new Date(date);
   const month = dateObj.toLocaleString('default', { month: 'short' });
@@ -46,9 +58,13 @@ export default function EventInfo() {
 
   const generateGoogleCalendarUrl = () => {
     const startDate = new Date(dateObj);
-    startDate.setHours(19, 30, 0); // 7:30 PM
+    const [hours, minutes] = time.split(':');
+    const isPM = time.includes('PM');
+    const hour = parseInt(hours) + (isPM ? 12 : 0);
+    startDate.setHours(hour, parseInt(minutes), 0);
+    
     const endDate = new Date(dateObj);
-    endDate.setHours(21, 0, 0); // 9:00 PM
+    endDate.setHours(hour + 1.5, parseInt(minutes), 0);
 
     const params = new URLSearchParams({
       action: 'TEMPLATE',
@@ -61,6 +77,18 @@ export default function EventInfo() {
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
   };
 
+  // Calculate arrival time (15 minutes before start time)
+  const [hours, minutes] = time.split(':');
+  const isPM = time.includes('PM');
+  const hour = parseInt(hours) + (isPM ? 12 : 0);
+  const arrivalTime = new Date();
+  arrivalTime.setHours(hour, parseInt(minutes) - 15, 0);
+  const formattedArrivalTime = arrivalTime.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+
   return (
     <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
       <div className="flex flex-col md:flex-row items-center gap-8">
@@ -68,7 +96,7 @@ export default function EventInfo() {
         <div className="flex-shrink-0 w-32 h-32 bg-primary/5 rounded-lg border border-primary/10 flex flex-col items-center justify-center">
           <div className="text-primary font-semibold text-lg">{month}</div>
           <div className="text-4xl font-bold text-foreground">{day}</div>
-          <div className="text-sm text-muted">7:30 PM</div>
+          <div className="text-sm text-muted">{time}</div>
         </div>
 
         {/* Event Details */}
@@ -87,13 +115,13 @@ export default function EventInfo() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Arrive by 7:15 PM</span>
+              <span>Arrive by {formattedArrivalTime}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-primary bg-blue-50 px-3 py-1.5 rounded-full">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Show starts at 7:30 PM</span>
+              <span>Show starts at {time}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-primary bg-blue-50 px-3 py-1.5 rounded-full">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

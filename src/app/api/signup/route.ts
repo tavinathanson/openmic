@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     try {
       const { data: openMicDate, error: dateError } = await supabase
         .from('open_mic_dates')
-        .select('date')
+        .select('date, time')
         .eq('id', dateData.id)
         .single();
       
@@ -128,13 +128,23 @@ export async function POST(request: Request) {
       if (isNaN(eventDate.getTime())) {
         throw new Error('Invalid date format from database');
       }
+
+      // Format the time from the database
+      const [hours, minutes] = openMicDate.time.split(':');
+      const timeObj = new Date();
+      timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
+      const formattedTime = timeObj.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
       
       await sendConfirmationEmail(
         email, 
         type, 
         signupData.id,
         eventDate,
-        '7:30 PM' // Hardcoded time from EventInfo.tsx
+        formattedTime
       );
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);

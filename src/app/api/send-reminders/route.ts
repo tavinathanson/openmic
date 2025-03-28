@@ -69,14 +69,23 @@ export async function GET() {
         
         // Format the date for the email
         const eventDate = new Date(dateData.date);
-        const time = '7:30 PM'; // Hardcoded time from EventInfo.tsx
+        
+        // Format the time from the database
+        const [hours, minutes] = dateData.time.split(':');
+        const timeObj = new Date();
+        timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
+        const formattedTime = timeObj.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
 
         await sendReminderEmail(
           signup.people.email,
           type,
           signup.id,
           eventDate,
-          time
+          formattedTime
         );
       } catch (error) {
         console.error(`Failed to send reminder to ${signup.people.email}:`, error);
