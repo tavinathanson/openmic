@@ -12,6 +12,8 @@ DROP TABLE IF EXISTS open_mic_dates;
 CREATE TABLE open_mic_dates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     date DATE NOT NULL,
+    time TIME NOT NULL DEFAULT '19:30:00',
+    timezone TEXT NOT NULL DEFAULT 'America/New_York',
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -58,4 +60,4 @@ CREATE POLICY "Allow all operations on sign_ups" ON sign_ups
     FOR ALL USING (true);
 
 -- Insert a sample date (you can modify this as needed)
-INSERT INTO open_mic_dates (date, is_active) VALUES (CURRENT_DATE, true); 
+INSERT INTO open_mic_dates (date, time, timezone, is_active) VALUES (CURRENT_DATE, '19:30:00', 'America/New_York', true); 

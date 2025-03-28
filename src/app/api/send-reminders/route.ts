@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendReminderEmail } from '@/lib/resend';
 import { PostgrestError } from '@supabase/supabase-js';
+import { parseISO } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
@@ -67,25 +68,15 @@ export async function GET() {
         // Determine if this is a comedian or audience signup based on whether they have a full_name
         const type = signup.people.full_name ? 'comedian' : 'audience';
         
-        // Format the date for the email
-        const eventDate = new Date(dateData.date);
+        // Parse the date from the database
+        const eventDate = parseISO(dateData.date);
         
-        // Format the time from the database
-        const [hours, minutes] = dateData.time.split(':');
-        const timeObj = new Date();
-        timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
-        const formattedTime = timeObj.toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        });
-
         await sendReminderEmail(
           signup.people.email,
           type,
           signup.id,
           eventDate,
-          formattedTime,
+          dateData.time,
           dateData.timezone
         );
       } catch (error) {

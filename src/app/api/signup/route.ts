@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendConfirmationEmail } from '@/lib/resend';
+import { parseISO } from 'date-fns';
 
 export async function POST(request: Request) {
   try {
@@ -124,7 +125,8 @@ export async function POST(request: Request) {
         throw new Error('Failed to get open mic date');
       }
 
-      const eventDate = new Date(openMicDate.date);
+      // Parse the date from the database
+      const eventDate = parseISO(openMicDate.date);
       if (isNaN(eventDate.getTime())) {
         throw new Error('Invalid date format from database');
       }
@@ -133,18 +135,13 @@ export async function POST(request: Request) {
       const [hours, minutes] = openMicDate.time.split(':');
       const timeObj = new Date();
       timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
-      const formattedTime = timeObj.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
       
       await sendConfirmationEmail(
         email, 
         type, 
         signupData.id,
         eventDate,
-        formattedTime,
+        openMicDate.time,
         openMicDate.timezone
       );
     } catch (emailError) {

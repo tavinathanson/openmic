@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { parseISO, format, isToday, isTomorrow } from 'date-fns';
 
 if (!process.env.RESEND_API_KEY) {
   throw new Error('Missing env.RESEND_API_KEY');
@@ -29,29 +30,21 @@ export async function sendConfirmationEmail(
 
   const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=${type}`;
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const eventDate = new Date(date);
-  eventDate.setHours(0, 0, 0, 0);
-
-  const dateText = eventDate.getTime() === today.getTime() 
+  // Parse the date string from the database
+  const eventDate = parseISO(date.toISOString());
+  
+  // Format the date text
+  const dateText = isToday(eventDate)
     ? 'tonight' 
-    : eventDate.getTime() === tomorrow.getTime()
+    : isTomorrow(eventDate)
     ? 'tomorrow'
-    : `on ${eventDate.toLocaleDateString()}`;
+    : `on ${format(eventDate, 'MMMM d, yyyy')}`;
 
   // Format time in the correct timezone
   const [hours, minutes] = time.split(':');
   const timeObj = new Date();
   timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
-  const formattedTime = timeObj.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: timezone
-  });
+  const formattedTime = format(timeObj, 'h:mm a');
 
   const comedianMessage = `Thank you for signing up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
   
@@ -75,29 +68,21 @@ export async function sendReminderEmail(
 ) {
   const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=${type}`;
   
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const eventDate = new Date(date);
-  eventDate.setHours(0, 0, 0, 0);
-
-  const dateText = eventDate.getTime() === today.getTime() 
+  // Parse the date string from the database
+  const eventDate = parseISO(date.toISOString());
+  
+  // Format the date text
+  const dateText = isToday(eventDate)
     ? 'tonight' 
-    : eventDate.getTime() === tomorrow.getTime()
+    : isTomorrow(eventDate)
     ? 'tomorrow'
-    : `on ${eventDate.toLocaleDateString()}`;
+    : `on ${format(eventDate, 'MMMM d, yyyy')}`;
 
   // Format time in the correct timezone
   const [hours, minutes] = time.split(':');
   const timeObj = new Date();
   timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
-  const formattedTime = timeObj.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: timezone
-  });
+  const formattedTime = format(timeObj, 'h:mm a');
 
   const comedianMessage = `Friendly reminder that you're signed up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
   
