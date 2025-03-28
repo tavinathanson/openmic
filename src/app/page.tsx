@@ -4,8 +4,8 @@ import EventInfo from '@/components/EventInfo';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+    <main className="min-h-screen bg-sky-50/50 py-20 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
         <div className="space-y-12">
           <div className="animate-fade-in-up">
             <EventInfo />
