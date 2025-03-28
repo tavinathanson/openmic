@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         .from('people')
         .insert([{
           email,
-          full_name: type === 'comedian' ? full_name : null
+          full_name: full_name || null
         }])
         .select()
         .single();
@@ -114,7 +114,23 @@ export async function POST(request: Request) {
 
     // Send confirmation email
     try {
-      await sendConfirmationEmail(email, type, signupData.id);
+      const { data: openMicDate, error: dateError } = await supabase
+        .from('open_mic_dates')
+        .select('date')
+        .eq('id', dateData.id)
+        .single();
+      
+      if (dateError || !openMicDate) {
+        throw new Error('Failed to get open mic date');
+      }
+      
+      await sendConfirmationEmail(
+        email, 
+        type, 
+        signupData.id,
+        new Date(openMicDate.date),
+        '7:30 PM' // Hardcoded time from EventInfo.tsx
+      );
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
       // Don't throw here, we still want to return success since the signup worked

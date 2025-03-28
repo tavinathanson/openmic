@@ -38,11 +38,11 @@ export default function SignupForm() {
         }
 
         if (data.exists) {
-          if (type === 'comedian' && data.full_name) {
+          if (data.full_name) {
             setExistingName(data.full_name);
             setFullName(data.full_name);
             setShowNameField(false);
-          } else if (type === 'comedian') {
+          } else {
             setShowNameField(true);
             setExistingName(null);
             setFullName('');
@@ -51,7 +51,7 @@ export default function SignupForm() {
         } else {
           setExistingName(null);
           setFullName('');
-          setShowNameField(type === 'comedian');
+          setShowNameField(true);
           setAlreadySignedUp(false);
         }
       } catch (error) {
@@ -59,7 +59,7 @@ export default function SignupForm() {
       } finally {
         setIsValidating(false);
       }
-    }, 500); // 500ms debounce
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [email, type]);
@@ -86,7 +86,7 @@ export default function SignupForm() {
         body: JSON.stringify({
           email,
           type,
-          ...(type === 'comedian' ? { full_name: existingName || fullName } : {}),
+          full_name: existingName || fullName,
           number_of_people: numPeople
         }),
       });
@@ -200,7 +200,19 @@ export default function SignupForm() {
         </div>
       )}
 
-      {type === 'comedian' && isValidating && (
+      {type === 'audience' && existingName && alreadySignedUp && (
+        <div className="p-4 bg-primary-light/10 text-primary-dark rounded-lg border border-primary-light/20">
+          {existingName}: you&apos;re already signed up for this date! See you there!
+        </div>
+      )}
+
+      {type === 'audience' && existingName && !alreadySignedUp && (
+        <div className="p-4 bg-primary-light/5 text-primary-dark rounded-lg border border-primary-light/10">
+          Name: {existingName}
+        </div>
+      )}
+
+      {isValidating && (
         <div className="p-4 bg-muted-light/5 text-muted rounded-lg border border-muted-light/10">
           <div className="flex items-center space-x-2">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-muted border-t-transparent"></div>
@@ -209,10 +221,10 @@ export default function SignupForm() {
         </div>
       )}
 
-      {type === 'comedian' && !isValidating && showNameField && (
+      {!isValidating && showNameField && (
         <div>
           <label htmlFor="fullName" className="block text-sm font-medium text-muted mb-2">
-            Your full name or stage name
+            {type === 'comedian' ? 'Your full name or stage name' : 'Your name'}
           </label>
           <input
             type="text"
@@ -221,7 +233,7 @@ export default function SignupForm() {
             onChange={(e) => setFullName(e.target.value)}
             required
             className="w-full px-4 py-3 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg"
-            placeholder="Enter your full name or stage name"
+            placeholder={type === 'comedian' ? 'Enter your full name or stage name' : 'Enter your name'}
           />
         </div>
       )}
