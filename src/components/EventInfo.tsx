@@ -44,6 +44,23 @@ export default function EventInfo() {
   const month = dateObj.toLocaleString('default', { month: 'short' });
   const day = dateObj.getDate();
 
+  const generateGoogleCalendarUrl = () => {
+    const startDate = new Date(dateObj);
+    startDate.setHours(19, 30, 0); // 7:30 PM
+    const endDate = new Date(dateObj);
+    endDate.setHours(21, 0, 0); // 9:00 PM
+
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: 'Open Mic Night at Crave Nature\'s Eatery',
+      details: 'Join us for an evening of live performances!',
+      location: 'Crave Nature\'s Eatery',
+      dates: `${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+    });
+
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  };
+
   return (
     <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
       <div className="flex flex-col md:flex-row items-center gap-8">
@@ -84,6 +101,17 @@ export default function EventInfo() {
               </svg>
               <span>Sign up to perform or watch!</span>
             </div>
+            <a
+              href={generateGoogleCalendarUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-white bg-primary hover:bg-primary/90 px-4 py-1.5 rounded-full transition-colors"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5zm2 4h10v2H7v-2zm0 4h7v2H7v-2z"/>
+              </svg>
+              <span>Add to Google Calendar</span>
+            </a>
           </div>
         </div>
       </div>
