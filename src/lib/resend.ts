@@ -19,7 +19,8 @@ export async function sendConfirmationEmail(
   type: 'comedian' | 'audience', 
   id: string,
   date: Date,
-  time: string
+  time: string,
+  timezone: string = 'America/New_York'
 ) {
   // Validate date
   if (!date || isNaN(date.getTime())) {
@@ -41,9 +42,20 @@ export async function sendConfirmationEmail(
     ? 'tomorrow'
     : `on ${eventDate.toLocaleDateString()}`;
 
-  const comedianMessage = `Thank you for signing up to perform at the Crave Laughs open mic at ${time} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
+  // Format time in the correct timezone
+  const [hours, minutes] = time.split(':');
+  const timeObj = new Date();
+  timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
+  const formattedTime = timeObj.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: timezone
+  });
+
+  const comedianMessage = `Thank you for signing up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
   
-  const audienceMessage = `Thank you for signing up to attend the Crave Laughs open mic night at ${time} ${dateText}! See you there!`;
+  const audienceMessage = `Thank you for signing up to attend the Crave Laughs open mic night at ${formattedTime} ${dateText}! See you there!`;
   
   await resend.emails.send({
     from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
@@ -58,7 +70,8 @@ export async function sendReminderEmail(
   type: 'comedian' | 'audience', 
   id: string,
   date: Date,
-  time: string
+  time: string,
+  timezone: string = 'America/New_York'
 ) {
   const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=${type}`;
   
@@ -75,9 +88,20 @@ export async function sendReminderEmail(
     ? 'tomorrow'
     : `on ${eventDate.toLocaleDateString()}`;
 
-  const comedianMessage = `Friendly reminder that you're signed up to perform at the Crave Laughs open mic at ${time} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
+  // Format time in the correct timezone
+  const [hours, minutes] = time.split(':');
+  const timeObj = new Date();
+  timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
+  const formattedTime = timeObj.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: timezone
+  });
+
+  const comedianMessage = `Friendly reminder that you're signed up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
   
-  const audienceMessage = `Friendly reminder that the Crave Laughs open mic night is at ${time} ${dateText}! See you there!`;
+  const audienceMessage = `Friendly reminder that the Crave Laughs open mic night is at ${formattedTime} ${dateText}! See you there!`;
   
   await resend.emails.send({
     from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,

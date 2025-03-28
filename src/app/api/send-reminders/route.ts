@@ -85,7 +85,8 @@ export async function GET() {
           type,
           signup.id,
           eventDate,
-          formattedTime
+          formattedTime,
+          dateData.timezone
         );
       } catch (error) {
         console.error(`Failed to send reminder to ${signup.people.email}:`, error);

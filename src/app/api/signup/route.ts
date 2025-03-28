@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     try {
       const { data: openMicDate, error: dateError } = await supabase
         .from('open_mic_dates')
-        .select('date, time')
+        .select('date, time, timezone')
         .eq('id', dateData.id)
         .single();
       
@@ -144,7 +144,8 @@ export async function POST(request: Request) {
         type, 
         signupData.id,
         eventDate,
-        formattedTime
+        formattedTime,
+        openMicDate.timezone
       );
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
