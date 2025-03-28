@@ -105,7 +105,7 @@ export async function POST(request: Request) {
       .insert([{
         person_id: personId,
         open_mic_date_id: dateData.id,
-        number_of_people: type === 'comedian' ? 1 : (number_of_people || 1)
+        number_of_people: number_of_people || 1
       }])
       .select()
       .single();

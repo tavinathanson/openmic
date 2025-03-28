@@ -87,7 +87,7 @@ export default function SignupForm() {
           email,
           type,
           ...(type === 'comedian' ? { full_name: existingName || fullName } : {}),
-          ...(type === 'audience' ? { number_of_people: numPeople } : {})
+          number_of_people: numPeople
         }),
       });
 
@@ -122,40 +122,48 @@ export default function SignupForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div>
-        <label className="block text-sm font-medium text-muted mb-3">
-          Sign up as
+        <label className="block text-lg font-medium text-foreground mb-3">
+          What are you signing up as?
         </label>
-        <div className="flex space-x-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => setType('comedian')}
-            className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+            className={`flex items-center gap-3 p-4 rounded-lg font-medium transition-all duration-200 ${
               type === 'comedian'
                 ? 'bg-primary text-white shadow-sm hover:bg-primary-light'
                 : 'bg-muted-light/5 text-muted hover:bg-muted-light/10'
             }`}
           >
-            Comedian
+            <span className="text-xl">🎤</span>
+            <div className="text-left">
+              <div className="text-base">I&apos;m a comedian</div>
+              <div className="text-xs opacity-80">Performing solo or bringing guests</div>
+            </div>
           </button>
           <button
             type="button"
             onClick={() => setType('audience')}
-            className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+            className={`flex items-center gap-3 p-4 rounded-lg font-medium transition-all duration-200 ${
               type === 'audience'
                 ? 'bg-primary text-white shadow-sm hover:bg-primary-light'
                 : 'bg-muted-light/5 text-muted hover:bg-muted-light/10'
             }`}
           >
-            Audience
+            <span className="text-xl">🎟️</span>
+            <div className="text-left">
+              <div className="text-base">I&apos;m here to watch</div>
+              <div className="text-xs opacity-80">Bring your friends!</div>
+            </div>
           </button>
         </div>
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-muted mb-2">
-          Email
-        </label>
         <div className="relative">
+          <label htmlFor="email" className="block text-sm font-medium text-muted mb-2">
+            Your email
+          </label>
           <input
             type="email"
             id="email"
@@ -169,11 +177,11 @@ export default function SignupForm() {
               }
             }}
             required
-            className="w-full px-4 py-2.5 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg"
             placeholder="Enter your email"
           />
           {isValidating && (
-            <div className="absolute right-3 top-2.5">
+            <div className="absolute right-3 top-3">
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
             </div>
           )}
@@ -204,7 +212,7 @@ export default function SignupForm() {
       {type === 'comedian' && !isValidating && showNameField && (
         <div>
           <label htmlFor="fullName" className="block text-sm font-medium text-muted mb-2">
-            Your Full Name or Stage Name
+            Your full name or stage name
           </label>
           <input
             type="text"
@@ -212,33 +220,36 @@ export default function SignupForm() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
-            className="w-full px-4 py-2.5 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+            className="w-full px-4 py-3 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg"
             placeholder="Enter your full name or stage name"
           />
         </div>
       )}
 
-      {type === 'audience' && (
+      {(type === 'comedian' || type === 'audience') && !alreadySignedUp && (
         <div>
           <label htmlFor="numberOfPeople" className="block text-sm font-medium text-muted mb-2">
-            Number of People
+            Rough count of people in your group{type === 'comedian' ? ' (including yourself)' : ''}
           </label>
-          <input
-            type="number"
-            id="numberOfPeople"
-            value={numberOfPeople}
-            onChange={(e) => setNumberOfPeople(e.target.value)}
-            min="1"
-            required
-            className="w-full px-4 py-2.5 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
-          />
+          <div className="relative">
+            <input
+              type="number"
+              id="numberOfPeople"
+              value={numberOfPeople}
+              onChange={(e) => setNumberOfPeople(e.target.value)}
+              min="1"
+              required
+              className="w-full px-4 py-3 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg"
+              placeholder={type === 'comedian' ? "Your best guess (including yourself)" : "Your best guess"}
+            />
+          </div>
         </div>
       )}
 
       <button
         type="submit"
         disabled={status === 'loading' || !isFormValid || alreadySignedUp}
-        className="w-full py-2.5 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+        className="w-full py-3 px-4 bg-primary text-white rounded-lg font-medium text-lg hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
       >
         {status === 'loading' ? 'Signing up...' : alreadySignedUp ? 'Already Signed Up' : 'Sign Up'}
       </button>
