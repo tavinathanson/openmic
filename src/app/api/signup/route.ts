@@ -123,17 +123,23 @@ export async function POST(request: Request) {
       if (dateError || !openMicDate) {
         throw new Error('Failed to get open mic date');
       }
+
+      const eventDate = new Date(openMicDate.date);
+      if (isNaN(eventDate.getTime())) {
+        throw new Error('Invalid date format from database');
+      }
       
       await sendConfirmationEmail(
         email, 
         type, 
         signupData.id,
-        new Date(openMicDate.date),
+        eventDate,
         '7:30 PM' // Hardcoded time from EventInfo.tsx
       );
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
-      // Don't throw here, we still want to return success since the signup worked
+      // Log the error but don't throw - we still want to return success since the signup worked
+      // The user can still attend even if they don't get the email
     }
 
     return NextResponse.json({ success: true });

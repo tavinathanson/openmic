@@ -21,6 +21,11 @@ export async function sendConfirmationEmail(
   date: Date,
   time: string
 ) {
+  // Validate date
+  if (!date || isNaN(date.getTime())) {
+    throw new Error('Invalid date provided for email confirmation');
+  }
+
   const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=${type}`;
   
   const today = new Date();
