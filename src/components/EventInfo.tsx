@@ -52,8 +52,8 @@ export default function EventInfo() {
 
     const params = new URLSearchParams({
       action: 'TEMPLATE',
-      text: 'Open Mic Night at Crave Nature\'s Eatery',
-      details: 'Join us for an evening of live performances!',
+      text: 'Crave Laughs Open Mic Night',
+      details: 'Come perform or watch some comedy! More details at <a href="https://openmic.tavicomedy.com">openmic.tavicomedy.com</a>',
       location: 'Crave Nature\'s Eatery',
       dates: `${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
     });
