@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import validator from 'email-validator';
 
 type SignupType = 'comedian' | 'audience';
 
@@ -15,12 +16,23 @@ export default function SignupForm() {
   const [isValidating, setIsValidating] = useState(false);
   const [showNameField, setShowNameField] = useState(false);
   const [alreadySignedUp, setAlreadySignedUp] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   // Debounced email validation
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (!email || !type) return;
-      
+      if (!email) {
+        setEmailError(null);
+        return;
+      }
+
+      // First validate email format
+      if (!validator.validate(email)) {
+        setEmailError('Please enter a valid email address');
+        return;
+      }
+
+      // Then check if it exists in our system
       setIsValidating(true);
       try {
         const response = await fetch('/api/validate-email', {
@@ -37,6 +49,7 @@ export default function SignupForm() {
           throw new Error(data.error || 'Failed to validate email');
         }
 
+        setEmailError(null);
         if (data.exists) {
           if (data.full_name) {
             setExistingName(data.full_name);
@@ -56,6 +69,7 @@ export default function SignupForm() {
         }
       } catch (error) {
         console.error('Email validation error:', error);
+        setEmailError('Failed to validate email. Please try again.');
       } finally {
         setIsValidating(false);
       }
@@ -68,6 +82,13 @@ export default function SignupForm() {
     e.preventDefault();
     setStatus('loading');
     setMessage('');
+
+    // Validate email format again before submission
+    if (!validator.validate(email)) {
+      setStatus('error');
+      setMessage('Please enter a valid email address');
+      return;
+    }
 
     // Validate number of people
     const numPeople = parseInt(numberOfPeople);
@@ -105,6 +126,7 @@ export default function SignupForm() {
       setExistingName(null);
       setShowNameField(false);
       setAlreadySignedUp(true);
+      setEmailError(null);
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'An error occurred. Please try again.');
@@ -116,6 +138,7 @@ export default function SignupForm() {
   }
 
   const isFormValid = email && 
+    !emailError &&
     (existingName || (fullName && fullName.trim().length > 0)) &&
     numberOfPeople &&
     !alreadySignedUp;
@@ -175,16 +198,22 @@ export default function SignupForm() {
               if (!e.target.value) {
                 setFullName('');
                 setShowNameField(false);
+                setEmailError(null);
               }
             }}
             required
-            className="w-full px-4 py-3 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg"
+            className={`w-full px-4 py-3 bg-card border ${
+              emailError ? 'border-red-500' : 'border-border'
+            } rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg`}
             placeholder="Enter your email"
           />
           {isValidating && (
             <div className="absolute right-3 top-3">
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
             </div>
+          )}
+          {emailError && (
+            <p className="mt-1 text-sm text-red-500">{emailError}</p>
           )}
         </div>
       </div>
@@ -217,7 +246,7 @@ export default function SignupForm() {
         <div className="p-4 bg-muted-light/5 text-muted rounded-lg border border-muted-light/10">
           <div className="flex items-center space-x-2">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-muted border-t-transparent"></div>
-            <span>Validating email...</span>
+            <span>Checking if you&apos;ve signed up before...</span>
           </div>
         </div>
       )}
