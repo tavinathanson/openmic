@@ -63,8 +63,8 @@ export default function EventInfo() {
     const hour = parseInt(hours) + (isPM ? 12 : 0);
     startDate.setHours(hour, parseInt(minutes), 0);
     
-    const endDate = new Date(dateObj);
-    endDate.setHours(hour + 1.5, parseInt(minutes), 0);
+    const endDate = new Date(startDate);
+    endDate.setMinutes(endDate.getMinutes() + 90);
 
     const params = new URLSearchParams({
       action: 'TEMPLATE',
