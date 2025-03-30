@@ -13,7 +13,7 @@ export default function Header() {
               height={32}
               className="w-8 h-8"
             />
-            <span className="text-xl font-heading font-semibold text-foreground">
+            <span className="text-2xl font-heading font-semibold text-foreground">
               <i>Crave Laughs</i> Open Mic
             </span>
           </div>
