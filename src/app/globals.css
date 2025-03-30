@@ -31,7 +31,7 @@
   --color-border: var(--border);
   --color-card: var(--card);
   --font-sans: var(--font-inter);
-  --font-heading: var(--font-outfit);
+  --font-heading: var(--font-poltawski-nowy);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -61,8 +61,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
+  font-family: var(--font-poltawski-nowy);
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.2;
