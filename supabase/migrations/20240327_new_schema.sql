@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS audience;
 DROP TABLE IF EXISTS sign_ups;
 DROP TABLE IF EXISTS people;
 DROP TABLE IF EXISTS open_mic_dates;
+DROP TABLE IF EXISTS check_ins;
 
 -- Create open_mic_dates table
 CREATE TABLE open_mic_dates (
@@ -34,6 +35,14 @@ CREATE TABLE sign_ups (
     number_of_people INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(person_id, open_mic_date_id)
+);
+
+-- Create check_ins table
+CREATE TABLE check_ins (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    sign_up_id UUID NOT NULL REFERENCES sign_ups(id),
+    checked_in_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(sign_up_id)
 );
 
 -- Create indexes for better query performance
