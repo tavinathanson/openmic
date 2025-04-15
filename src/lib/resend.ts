@@ -43,7 +43,7 @@ export async function sendConfirmationEmail(
 
   // Format time in the specified timezone
   const [hours, minutes] = time.split(':');
-  const timeString = `${format(date, 'yyyy-MM-dd')}T${hours}:${minutes}:00`;
+  const timeString = `${format(date, 'yyyy-MM-dd')}T${hours}:${minutes}:00${timezone === 'America/New_York' ? '-04:00' : '+00:00'}`;
   const timeObj = new Date(timeString);
   const formattedTime = formatInTimeZone(timeObj, timezone, 'h:mm a');
 
@@ -58,41 +58,3 @@ export async function sendConfirmationEmail(
     html: `<p>${type === 'comedian' ? comedianMessage : audienceMessage}</p>`,
   });
 }
-
-export async function sendReminderEmail(
-  email: string, 
-  type: 'comedian' | 'audience', 
-  id: string,
-  date: Date,
-  time: string,
-  timezone: string = 'America/New_York'
-) {
-  const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=${type}`;
-  
-  // Parse the date string from the database
-  const eventDate = parseISO(date.toISOString());
-  
-  // Format the date text
-  const dateText = isToday(eventDate)
-    ? 'tonight' 
-    : isTomorrow(eventDate)
-    ? 'tomorrow'
-    : `on ${format(eventDate, 'MMMM d')}`;
-
-  // Format time in the specified timezone
-  const [hours, minutes] = time.split(':');
-  const timeString = `${format(date, 'yyyy-MM-dd')}T${hours}:${minutes}:00`;
-  const timeObj = new Date(timeString);
-  const formattedTime = formatInTimeZone(timeObj, timezone, 'h:mm a');
-
-  const comedianMessage = `Friendly reminder that you're signed up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
-  
-  const audienceMessage = `Friendly reminder that the Crave Laughs open mic night is at ${formattedTime} ${dateText}! See you there!`;
-  
-  await resend.emails.send({
-    from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
-    to: email,
-    subject: 'Crave Laughs Open Mic Reminder',
-    html: `<p>${type === 'comedian' ? comedianMessage : audienceMessage}</p>`,
-  });
-} 
