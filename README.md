@@ -2,6 +2,8 @@
 
 A modern web application for managing comedy open mic signups. Built with Next.js, Supabase, and Resend.
 
+Mostly written by AI tools, including this README! Except this line. A human wrote this line. If the rest of the README sounds a little formal, it's because a computer wrote it. I know, it's weird.
+
 ## Features
 
 - Real-time comedian slot counter
@@ -12,6 +14,13 @@ A modern web application for managing comedy open mic signups. Built with Next.j
 - Real-time updates using Supabase subscriptions
 - Date-specific open mic events and signups
 - Active date management system
+- **Open Mic Signups**: Users can sign up for upcoming open mic events
+- **Admin Dashboard**: Manage signups, check-ins, and lineup order
+- **Drag-and-Drop Lineup Management**: 
+  - Manually reorder performers through intuitive drag-and-drop interface
+  - Weighted randomized ordering algorithm
+  - Support for both pre-registered signups and walk-ins
+  - Real-time updates and persistence of lineup order
 
 ## Prerequisites
 

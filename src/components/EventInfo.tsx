@@ -143,6 +143,14 @@ export default function EventInfo() {
           </div>
         </div>
       </div>
+
+      {/* Lineup Algorithm Info */}
+      <div className="mt-8 pt-6 border-t border-border">
+        <h3 className="text-lg font-semibold text-foreground mb-3">How the lineup is ordered</h3>
+        <p className="text-muted">
+          I use a randomized system that gives priority to comics who sign up early and arrive by {formattedArrivalTime}. If you want to nerd out: here&apos;s the actual code for the algorithm!
+        </p>
+      </div>
     </div>
   );
 } 
