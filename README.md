@@ -36,7 +36,7 @@ DATABASE_URL=postgresql://postgres:your_password@db.your_project_ref.supabase.co
 RESEND_API_KEY=your_resend_api_key
 
 # Application Configuration
-NEXT_PUBLIC_APP_URL=http://localhost:3000 # Change in production
+NEXT_PUBLIC_APP_URL=http://localhost:3003 # Change in production
 NEXT_PUBLIC_MAX_COMEDIAN_SLOTS=20 # Optional, defaults to 20
 ```
 

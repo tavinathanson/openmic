@@ -15,7 +15,6 @@ export default function Footer() {
             >
               open source
             </Link>
-            {' '}and freely available to use
           </p>
         </div>
       </div>
