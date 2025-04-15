@@ -119,7 +119,7 @@ export default function SignupForm() {
       }
 
       setStatus('success');
-      setMessage('Successfully signed up! Check your email for confirmation.');
+      setMessage('You\'re signed up! You\'ll also get a confirmation email.');
       setEmail('');
       setFullName('');
       setNumberOfPeople('1');
