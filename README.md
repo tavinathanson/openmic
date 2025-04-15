@@ -2,6 +2,8 @@
 
 A modern web application for managing comedy open mic signups. Built with Next.js, Supabase, and Resend.
 
+Mostly written by AI tools, including this README! Except this line. A human wrote this line. If the rest of the README sounds a little formal, it's because a computer wrote it. I know, it's weird.
+
 ## Features
 
 - Real-time comedian slot counter
