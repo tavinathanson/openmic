@@ -54,6 +54,7 @@ export async function sendConfirmationEmail(
   await resend.emails.send({
     from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
     to: email,
+    bcc: 'tavi.nathanson@gmail.com',
     subject: 'Crave Laughs Open Mic Signup Confirmation',
     html: `<p>${type === 'comedian' ? comedianMessage : audienceMessage}</p>`,
   });
