@@ -8,14 +8,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "NODE_ENV=development npx ts-node --project tsconfig.node.json scripts/db.ts push",
-    "db:push:prod": "NODE_ENV=production npx ts-node --project tsconfig.node.json scripts/db.ts push",
-    "db:pull": "NODE_ENV=development npx ts-node --project tsconfig.node.json scripts/db.ts pull",
-    "db:pull:prod": "NODE_ENV=production npx ts-node --project tsconfig.node.json scripts/db.ts pull",
-    "db:reset": "NODE_ENV=development npx ts-node --project tsconfig.node.json scripts/db.ts reset",
-    "db:reset:prod": "NODE_ENV=production npx ts-node --project tsconfig.node.json scripts/db.ts reset",
-    "db:status": "NODE_ENV=development npx ts-node --project tsconfig.node.json scripts/db.ts status",
-    "db:status:prod": "NODE_ENV=production npx ts-node --project tsconfig.node.json scripts/db.ts status"
+    "db:push": "NODE_ENV=development node --loader ts-node/esm scripts/db.ts push",
+    "db:push:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts push",
+    "db:pull": "NODE_ENV=development node --loader ts-node/esm scripts/db.ts pull",
+    "db:pull:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts pull",
+    "db:reset": "NODE_ENV=development node --loader ts-node/esm scripts/db.ts reset",
+    "db:reset:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts reset",
+    "db:status": "NODE_ENV=development node --loader ts-node/esm scripts/db.ts status",
+    "db:status:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts status"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.772.0",
