@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import { parseISO, format, isToday, isTomorrow } from 'date-fns';
-import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 
 if (!process.env.RESEND_API_KEY) {
   throw new Error('Missing env.RESEND_API_KEY');
@@ -44,7 +44,7 @@ export async function sendConfirmationEmail(
   // Format time in the specified timezone
   const [hours, minutes] = time.split(':');
   const timeString = `${format(date, 'yyyy-MM-dd')}T${hours}:${minutes}:00`;
-  const timeObj = toZonedTime(timeString, timezone);
+  const timeObj = new Date(timeString);
   const formattedTime = formatInTimeZone(timeObj, timezone, 'h:mm a');
 
   const comedianMessage = `Thank you for signing up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
@@ -82,7 +82,7 @@ export async function sendReminderEmail(
   // Format time in the specified timezone
   const [hours, minutes] = time.split(':');
   const timeString = `${format(date, 'yyyy-MM-dd')}T${hours}:${minutes}:00`;
-  const timeObj = toZonedTime(timeString, timezone);
+  const timeObj = new Date(timeString);
   const formattedTime = formatInTimeZone(timeObj, timezone, 'h:mm a');
 
   const comedianMessage = `Friendly reminder that you're signed up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;

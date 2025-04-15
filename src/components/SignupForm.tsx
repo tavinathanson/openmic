@@ -271,7 +271,7 @@ export default function SignupForm() {
       {(type === 'comedian' || type === 'audience') && !alreadySignedUp && (
         <div>
           <label htmlFor="numberOfPeople" className="block text-sm font-medium text-muted mb-2">
-            Rough count of people in your group{type === 'comedian' ? ' (including yourself)' : ''}
+            Rough count of people in your group{type === 'comedian' ? ', including yourself (other comedians sign up separately)' : ''}
           </label>
           <div className="relative">
             <input
