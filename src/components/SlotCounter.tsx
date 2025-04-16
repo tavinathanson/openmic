@@ -41,7 +41,8 @@ export default function SlotCounter() {
       const { count } = await supabase
         .from('sign_ups')
         .select('*', { count: 'exact', head: true })
-        .eq('open_mic_date_id', dateData.id);
+        .eq('open_mic_date_id', dateData.id)
+        .eq('signup_type', 'comedian');
       
       setRemainingSlots(maxSlots - (count || 0));
     }
