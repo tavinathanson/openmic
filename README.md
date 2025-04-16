@@ -100,6 +100,38 @@ npm run db:push
 npm run db:push:prod
 ```
 
+### Importing Data
+
+You can import people data from a CSV file using the import command. The CSV file should have the following columns:
+- `Name`: The person's full name or stage name
+- `Email`: The person's email address (must be unique)
+
+To import data:
+```bash
+# For development
+npm run db:import -- path/to/your/file.csv
+
+# For production
+npm run db:import:prod -- path/to/your/file.csv
+```
+
+The import will:
+- Create new records for emails that don't exist
+- Skip any records where the email already exists (no updates)
+- Show a summary of the import results including:
+  - Number of successfully imported new records
+  - Number of skipped records (duplicate emails)
+
+Example output:
+```
+status   | count | message
+---------+-------+------------------------
+inserted |   50  | Successfully imported new record
+skipped  |    3  | Skipped - email already exists
+```
+
+Note: The import process is designed to be safe and non-destructive. It will never update existing records, only insert new ones. If you need to update existing records, you should do so manually through the database interface.
+
 ### Database Schema
 
 The application uses three main tables:
