@@ -17,6 +17,7 @@ export default function SignupForm() {
   const [showNameField, setShowNameField] = useState(false);
   const [alreadySignedUp, setAlreadySignedUp] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [firstMicEver, setFirstMicEver] = useState(false);
 
   // Debounced email validation
   useEffect(() => {
@@ -61,6 +62,8 @@ export default function SignupForm() {
             setFullName('');
           }
           setAlreadySignedUp(data.already_signed_up);
+          // Reset first mic ever if email exists
+          setFirstMicEver(false);
         } else {
           setExistingName(null);
           setFullName('');
@@ -108,7 +111,8 @@ export default function SignupForm() {
           email,
           type,
           full_name: existingName || fullName,
-          number_of_people: numPeople
+          number_of_people: numPeople,
+          first_mic_ever: type === 'comedian' ? firstMicEver : false
         }),
       });
 
@@ -284,6 +288,23 @@ export default function SignupForm() {
               className="w-full px-4 py-3 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg"
               placeholder={type === 'comedian' ? "Your best guess (including yourself)" : "Your best guess"}
             />
+          </div>
+        </div>
+      )}
+
+      {type === 'comedian' && !existingName && !alreadySignedUp && !isValidating && email && !emailError && (
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3 p-4 bg-muted-light/5 rounded-lg border border-muted-light/10">
+            <input
+              type="checkbox"
+              id="firstMicEver"
+              checked={firstMicEver}
+              onChange={(e) => setFirstMicEver(e.target.checked)}
+              className="h-5 w-5 rounded border-muted-light text-primary focus:ring-primary"
+            />
+            <label htmlFor="firstMicEver" className="text-sm text-muted">
+              This is my first open mic ever! (Free cookie 🍪)
+            </label>
           </div>
         </div>
       )}

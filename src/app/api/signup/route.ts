@@ -6,7 +6,7 @@ import { parseISO } from 'date-fns';
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
-    const { email, type, full_name, number_of_people } = await request.json();
+    const { email, type, full_name, number_of_people, first_mic_ever } = await request.json();
 
     if (!email || !type) {
       return NextResponse.json(
@@ -106,7 +106,8 @@ export async function POST(request: Request) {
       .insert([{
         person_id: personId,
         open_mic_date_id: dateData.id,
-        number_of_people: number_of_people || 1
+        number_of_people: number_of_people || 1,
+        first_mic_ever: first_mic_ever || false
       }])
       .select()
       .single();
