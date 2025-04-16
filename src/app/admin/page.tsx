@@ -29,9 +29,9 @@ export default function AdminPage() {
       try {
         // Get the next open mic date
         const { data: nextOpenMic, error: openMicError } = await supabase
-          .from('open_mics')
+          .from('open_mic_dates')
           .select('id, date')
-          .gt('date', new Date().toISOString())
+          .eq('is_active', true)
           .order('date', { ascending: true })
           .limit(1)
           .single();
@@ -54,8 +54,8 @@ export default function AdminPage() {
               full_name
             )
           `)
-          .eq('open_mic_id', nextOpenMic.id)
-          .eq('type', 'comedian')
+          .eq('open_mic_date_id', nextOpenMic.id)
+          .eq('signup_type', 'comedian')
           .order('person(full_name)', { ascending: true, nullsFirst: true });
 
         if (error) throw error;
