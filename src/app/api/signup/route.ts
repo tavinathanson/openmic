@@ -107,7 +107,8 @@ export async function POST(request: Request) {
         person_id: personId,
         open_mic_date_id: dateData.id,
         number_of_people: number_of_people || 1,
-        first_mic_ever: first_mic_ever || false
+        first_mic_ever: first_mic_ever || false,
+        signup_type: type
       }])
       .select()
       .single();

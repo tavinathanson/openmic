@@ -44,4 +44,6 @@ export type SignUp = {
   open_mic_date_id: string;
   number_of_people: number;
   created_at: string;
+  signup_type: 'comedian' | 'audience';
+  first_mic_ever?: boolean;
 }; 
