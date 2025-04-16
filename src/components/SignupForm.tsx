@@ -187,6 +187,17 @@ export default function SignupForm() {
         </div>
       </div>
 
+      {type === 'comedian' && (
+        <div className="p-4 bg-primary-light/5 text-primary-dark rounded-lg border border-primary-light/10">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span><b>5 minutes</b> per comedian, or <b>7 minutes</b> if you bring 1+ non-performing guests</span>
+          </div>
+        </div>
+      )}
+
       <div>
         <div className="relative">
           <label htmlFor="email" className="block text-sm font-medium text-muted mb-2">
