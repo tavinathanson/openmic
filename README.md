@@ -10,7 +10,7 @@ Mostly written by AI tools, including this README! Except this line. A human wro
 - Sign up as either a comedian or audience member
 - Email confirmation and reminder system
 - Easy signup cancellation via email link
-- Responsive design with dark mode support
+- Responsive design
 - Real-time updates using Supabase subscriptions
 - Date-specific open mic events and signups
 - Active date management system
