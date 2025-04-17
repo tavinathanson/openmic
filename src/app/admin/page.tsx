@@ -1,5 +1,6 @@
 'use client';
 
+import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -96,35 +97,48 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Next Open Mic Performers</h1>
-          <button
-            onClick={copyEmailsToClipboard}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
-          >
-            {copySuccess ? 'Copied!' : 'Copy All Emails'}
-          </button>
-        </div>
-        
-        <div className="space-y-4">
-          {performers.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              No performers signed up for the next open mic yet.
-            </div>
-          ) : (
-            performers.map((performer) => (
-              <div
-                key={performer.id}
-                className="p-6 bg-white rounded-lg shadow-sm border border-gray-100"
-              >
-                <h2 className="text-2xl font-semibold text-gray-900">
-                  {performer.full_name || 'Anonymous'}
-                </h2>
-                <p className="text-gray-600 mt-1">{performer.email}</p>
+        <SignedOut>
+          <div className="text-center py-8">
+            <h1 className="text-2xl font-bold mb-4">Admin Access Required</h1>
+            <p className="mb-4">Please sign in to access the admin dashboard.</p>
+            <SignInButton mode="modal">
+              <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors">
+                Sign In
+              </button>
+            </SignInButton>
+          </div>
+        </SignedOut>
+        <SignedIn>
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Next Open Mic Performers</h1>
+            <button
+              onClick={copyEmailsToClipboard}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+            >
+              {copySuccess ? 'Copied!' : 'Copy All Emails'}
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {performers.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                No performers signed up for the next open mic yet.
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              performers.map((performer) => (
+                <div
+                  key={performer.id}
+                  className="p-6 bg-white rounded-lg shadow-sm border border-gray-100"
+                >
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    {performer.full_name || 'Anonymous'}
+                  </h2>
+                  <p className="text-gray-600 mt-1">{performer.email}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </SignedIn>
       </div>
     </div>
   );

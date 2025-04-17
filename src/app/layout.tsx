@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Poltawski_Nowy } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { ClerkProvider } from '@clerk/nextjs'
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -29,12 +30,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className={`${plusJakarta.variable} ${poltawskiNowy.variable} font-sans antialiased`}>
-        <Header />
-        {children}
-        <Footer />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className="scroll-smooth">
+        <body className={`${plusJakarta.variable} ${poltawskiNowy.variable} font-sans antialiased`}>
+          <Header />
+          {children}
+          <Footer />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
