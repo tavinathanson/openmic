@@ -61,31 +61,13 @@ The CSV should have `Name` and `Email` columns. The import will create new recor
 
 ## Security Implementation
 
-The application uses Supabase Row Level Security (RLS) policies and JWT tokens for secure data access:
+The application uses Supabase Row Level Security (RLS) with JWT authentication:
 
-### Row Level Security Policies
+- **Open Mic Dates**: Public read access
+- **People**: Public signup, protected access for personal data
+- **Signups**: Public signup, protected access for personal signups
 
-- **Open Mic Dates**: Public read access, allowing anyone to view upcoming dates
-- **People**: 
-  - Public insert access for new signups
-  - Protected read/delete access based on JWT email claim
-- **Signups**:
-  - Public insert access for new signups
-  - Protected read access based on JWT person_id and open_mic_date_id claims
-  - Protected delete access based on JWT id claim
-
-### JWT Token Implementation
-
-The application uses short-lived JWT tokens (5 minutes) for secure database operations:
-
-- Tokens are signed using `SUPABASE_JWT_SECRET`
-- Used for operations like:
-  - Validating email existence
-  - Checking existing signups
-  - Canceling signups
-  - Creating new signups
-
-This approach ensures that database operations are properly authorized while maintaining a good user experience.
+JWT tokens (5-minute lifespan) secure database operations like email validation, signup management, and cancellations.
 
 ## Deployment
 
