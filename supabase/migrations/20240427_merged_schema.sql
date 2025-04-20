@@ -60,24 +60,25 @@ CREATE POLICY open_mic_dates_select ON open_mic_dates
 CREATE POLICY open_mic_dates_insert ON open_mic_dates
     FOR INSERT WITH CHECK (true);
 
--- people: allow inserts and selects (no updates or deletes, and selects are protected by RLS)
-CREATE POLICY people_insert ON people
-    FOR INSERT WITH CHECK (true);
-CREATE POLICY people_select ON public.people
-  FOR SELECT
-  USING (
-    email = auth.jwt() ->> 'email'
-  );
+-- people: allow inserts; selects and deletes are protected by RLS
+CREATE POLICY people_insert ON people FOR INSERT WITH CHECK (true);
+CREATE POLICY people_select ON people
+  FOR SELECT USING (email = auth.jwt() ->> 'email');
+CREATE POLICY people_delete ON people
+  FOR DELETE USING (email = auth.jwt() ->> 'email');
 
--- sign_ups: allow inserts and selects (no updates or deletes, and selects are protected by RLS)
-CREATE POLICY signups_insert ON sign_ups
-    FOR INSERT WITH CHECK (true);
+-- sign_ups: allow inserts; selects and deletes are protected by RLS
+CREATE POLICY signups_insert ON sign_ups FOR INSERT WITH CHECK (true);
 CREATE POLICY signups_select ON public.sign_ups
   FOR SELECT
   USING (
     person_id        = (auth.jwt() ->> 'person_id')::uuid
     AND open_mic_date_id = (auth.jwt() ->> 'open_mic_date_id')::uuid
   ); 
+CREATE POLICY signups_delete ON sign_ups
+  FOR DELETE USING (
+    id = (auth.jwt() ->> 'id')::uuid
+  );
 
 -- Create function to get count safely, bypassing RLS
 CREATE OR REPLACE FUNCTION public.get_comedian_signup_count(p_date_id UUID)

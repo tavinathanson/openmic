@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
+// import { createServerSupabaseClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { signRlsJwt } from '@/lib/jwt';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -21,11 +23,19 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = await createServerSupabaseClient();
-    const { error } = await supabase
+    // Mint a JWT containing the signup_id so RLS can authorize this delete
+    const deleteToken = signRlsJwt({ id: id });
+    const supabaseDelete = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { global: { headers: { Authorization: `Bearer ${deleteToken}` } } }
+    );
+    // Perform the delete through the JWT-authenticated client
+    const { error } = await supabaseDelete
       .from('sign_ups')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .single();
 
     if (error) throw error;
 

@@ -33,11 +33,8 @@ export default function SlotCounter() {
       setCurrentDate(formattedDate);
 
       // Get the count of comedian signups for this date from the view
-      const { data: countData, error: countError } = await supabase
-        .from('comedian_signup_count') // Query the view
-        .select('comedian_count')
-        .eq('open_mic_date_id', dateData.id) // Filter by the active date ID
-        .maybeSingle(); // Use maybeSingle as there might be 0 signups for the date
+      const { data: comedianCount, error: countError } = await supabase
+        .rpc('get_comedian_signup_count', { p_date_id: dateData.id });
 
       if (countError) {
         console.error('Error fetching comedian count:', countError);
@@ -45,7 +42,7 @@ export default function SlotCounter() {
         return;
       }
 
-      const currentCount = countData?.comedian_count || 0;
+      const currentCount = comedianCount ?? 0;
       
       setRemainingSlots(maxSlots - currentCount);
     }
