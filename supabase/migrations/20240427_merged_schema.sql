@@ -2,6 +2,8 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Clean up existing objects if re-running this script
+DROP VIEW IF EXISTS comedian_signup_count;
+DROP VIEW IF EXISTS comedian_signups;
 DROP TABLE IF EXISTS sign_ups;
 DROP TABLE IF EXISTS people;
 DROP TABLE IF EXISTS open_mic_dates;
@@ -65,6 +67,25 @@ CREATE POLICY people_insert ON people
 -- sign_ups: allow INSERTS ONLY (no SELECT/UPDATE/DELETE)
 CREATE POLICY signups_insert ON sign_ups
     FOR INSERT WITH CHECK (true);
+
+-- Create a view for counting comedian sign-ups per date (for slot counter)
+CREATE OR REPLACE VIEW comedian_signup_count AS
+SELECT 
+    open_mic_date_id,
+    COUNT(*) as comedian_count
+FROM 
+    sign_ups
+WHERE 
+    signup_type = 'comedian'
+GROUP BY
+    open_mic_date_id;
+
+-- Add comment to explain the view
+COMMENT ON VIEW comedian_signup_count IS 'Shows the total count of comedian sign-ups per open mic date';
+
+-- Allow public read access to the count view
+ALTER VIEW comedian_signup_count OWNER TO postgres;
+GRANT SELECT ON comedian_signup_count TO PUBLIC;
 
 -- Insert a sample date (optional)
 INSERT INTO open_mic_dates (date, time, timezone, is_active)

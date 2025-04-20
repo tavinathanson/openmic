@@ -32,23 +32,32 @@ export default function SlotCounter() {
       });
       setCurrentDate(formattedDate);
 
-      // Get the count of signups for this date
-      const { count } = await supabase
-        .from('sign_ups')
-        .select('*', { count: 'exact', head: true })
-        .eq('open_mic_date_id', dateData.id)
-        .eq('signup_type', 'comedian');
+      // Get the count of comedian signups for this date from the view
+      const { data: countData, error: countError } = await supabase
+        .from('comedian_signup_count') // Query the view
+        .select('comedian_count')
+        .eq('open_mic_date_id', dateData.id) // Filter by the active date ID
+        .maybeSingle(); // Use maybeSingle as there might be 0 signups for the date
+
+      if (countError) {
+        console.error('Error fetching comedian count:', countError);
+        setRemainingSlots(maxSlots); // Assume max slots if count fails
+        return;
+      }
+
+      const currentCount = countData?.comedian_count || 0;
       
-      setRemainingSlots(maxSlots - (count || 0));
+      setRemainingSlots(maxSlots - currentCount);
     }
 
     // Initial fetch
     fetchSlots();
 
-    // Subscribe to changes
+    // Subscribe to changes on the view or underlying table
     const subscription = supabase
-      .channel('sign_ups')
+      .channel('comedian_signup_count_changes') // Use a unique channel name
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sign_ups' }, () => {
+        // Re-fetch when sign_ups changes, as the view depends on it
         fetchSlots();
       })
       .subscribe();
