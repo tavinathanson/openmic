@@ -79,24 +79,18 @@ CREATE POLICY signups_select ON public.sign_ups
     AND open_mic_date_id = (auth.jwt() ->> 'open_mic_date_id')::uuid
   ); 
 
--- Create a view for counting comedian sign-ups per date (for slot counter)
-CREATE OR REPLACE VIEW comedian_signup_count AS
-SELECT 
-    open_mic_date_id,
-    COUNT(*) as comedian_count
-FROM 
-    sign_ups
-WHERE 
-    signup_type = 'comedian'
-GROUP BY
-    open_mic_date_id;
+-- Create function to get count safely, bypassing RLS
+CREATE OR REPLACE FUNCTION public.get_comedian_signup_count(p_date_id UUID)
+  RETURNS BIGINT
+  LANGUAGE sql STABLE SECURITY DEFINER AS $$
+    SELECT COUNT(*)::bigint
+      FROM public.sign_ups
+     WHERE signup_type       = 'comedian'
+       AND open_mic_date_id  = p_date_id;
+$$;
 
--- Add comment to explain the view
-COMMENT ON VIEW comedian_signup_count IS 'Shows the total count of comedian sign-ups per open mic date';
-
--- Allow public read access to the count view
-ALTER VIEW comedian_signup_count OWNER TO postgres;
-GRANT SELECT ON comedian_signup_count TO PUBLIC;
+-- Grant execute so anonymous users can call this RPC
+GRANT EXECUTE ON FUNCTION public.get_comedian_signup_count(UUID) TO anon;
 
 -- Insert a sample date (optional)
 INSERT INTO open_mic_dates (date, time, timezone, is_active)

@@ -53,7 +53,9 @@ export async function POST(request: Request) {
     }
     let personId: string;
     if (!existingPerson) {
-      const { data: newPerson, error: createError } = await supabase
+      // Still need to use supabaseEmail to create the person, which is still relevant because we mint JWT tokens based on 
+      // the email even if one doesn't exist yet in the database. And our policy is to use JWT tokens.
+      const { data: newPerson, error: createError } = await supabaseEmail
         .from('people')
         .insert([{ email, full_name: full_name || null }])
         .select()
@@ -92,17 +94,13 @@ export async function POST(request: Request) {
 
     // Check if comedian slots are full for this date
     if (type === 'comedian') {
-      const { data: countRow, error: countError } = await supabase
-        .from('comedian_signup_count')
-        .select('comedian_count')
-        .eq('open_mic_date_id', activeDate.id)
-        .single();
+      const { data: comedianCount, error: countError } = await supabaseSignup
+        .rpc('get_comedian_signup_count', { p_date_id: activeDate.id });
       if (countError) throw countError;
-      const comedianCount = countRow?.comedian_count ?? 0;
       const maxSlots = parseInt(
         process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20'
       );
-      if (comedianCount >= maxSlots) {
+      if ((comedianCount ?? 0) >= maxSlots) {
         return NextResponse.json(
           { error: 'Sorry, all comedian slots are full for this date!' },
           { status: 400 }
@@ -111,7 +109,7 @@ export async function POST(request: Request) {
     }
 
     // Create the signup
-    const { data: signupData, error: createSignupError } = await supabase
+    const { data: signupData, error: createSignupError } = await supabaseSignup
       .from('sign_ups')
       .insert([{
         person_id: personId,
