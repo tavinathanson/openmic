@@ -72,7 +72,7 @@ CREATE POLICY signups_insert ON sign_ups FOR INSERT WITH CHECK (true);
 CREATE POLICY signups_select ON public.sign_ups
   FOR SELECT
   USING (
-    person_id        = (auth.jwt() ->> 'person_id')::uuid
+    person_id = (auth.jwt() ->> 'person_id')::uuid
     AND open_mic_date_id = (auth.jwt() ->> 'open_mic_date_id')::uuid
   ); 
 CREATE POLICY signups_delete ON sign_ups

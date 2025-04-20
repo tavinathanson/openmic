@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient } from '@/lib/supabase';
 import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
 import { signRlsJwt } from '@/lib/jwt';
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createServerSupabaseClient();
     const { email, type } = await request.json();
 
     if (!email || !type) {
@@ -21,20 +23,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create a JWT token with the email being validated
-    const token = signRlsJwt({ email });
 
-    // Create a Supabase client with the JWT token
-    const supabase = createClient(
+    // Ensure person exists, creating if necessary using JWT-protected select
+    const emailToken = signRlsJwt({ email });
+    const supabaseEmail = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      }
+      { global: { headers: { Authorization: `Bearer ${emailToken}` } } }
     );
 
     // Get the active open mic date (throws if none)
@@ -49,11 +44,21 @@ export async function POST(request: Request) {
     }
 
     // First, check if the email exists in the people table
-    const personData = await getPersonByEmail(supabase, email);
+    const personData = await getPersonByEmail(supabaseEmail, email);
 
     // If person exists, check if they're already signed up for this date
     if (personData) {
-      const { data: signupData, error: signupError } = await supabase
+      const signupToken = signRlsJwt({
+        person_id: personData.id,
+        open_mic_date_id: activeDate.id,
+      });
+      const supabaseSignup = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { global: { headers: { Authorization: `Bearer ${signupToken}` } } }
+      );
+
+      const { data: signupData, error: signupError } = await supabaseSignup
         .from('sign_ups')
         .select('*')
         .eq('person_id', personData.id)
