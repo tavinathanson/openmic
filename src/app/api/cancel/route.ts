@@ -30,12 +30,21 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { global: { headers: { Authorization: `Bearer ${deleteToken}` } } }
     );
+
+    // First verify the row exists
+    const { error: selectError } = await supabaseDelete
+      .from('sign_ups')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (selectError) throw selectError;
+    
     // Perform the delete through the JWT-authenticated client
     const { error } = await supabaseDelete
       .from('sign_ups')
       .delete()
-      .eq('id', id)
-      .single();
+      .eq('id', id);
 
     if (error) throw error;
 

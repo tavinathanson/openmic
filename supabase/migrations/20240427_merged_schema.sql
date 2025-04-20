@@ -79,6 +79,8 @@ CREATE POLICY signups_delete ON sign_ups
   FOR DELETE USING (
     id = (auth.jwt() ->> 'id')::uuid
   );
+CREATE POLICY signups_select_by_id ON sign_ups
+  FOR SELECT USING (id = (auth.jwt() ->> 'id')::uuid);
 
 -- Create function to get count safely, bypassing RLS
 CREATE OR REPLACE FUNCTION public.get_comedian_signup_count(p_date_id UUID)
