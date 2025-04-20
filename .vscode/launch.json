@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    
+    {
+      "name": "Next.js: Attach Server",
+      "type": "node",
+      "request": "attach",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "port": 9230, //  There are two relevant ports; it is critical to use the correct one
+      "address": "localhost",
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "${workspaceFolder}",
+      "restart": true, // Automatically try to re-attach if the server restarts
+      "sourceMaps": true, // Use source maps for TypeScript
+      "protocol": "inspector"
+    }
+} 
