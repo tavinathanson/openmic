@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { signRlsJwt } from '@/lib/jwt';
 import { sendConfirmationEmail } from '@/lib/resend';
 import { parseISO } from 'date-fns';
-import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
+import { getActiveOpenMicDate } from '@/lib/openMic';
 
 export async function POST(request: Request) {
   try {
@@ -34,8 +36,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Ensure person exists, creating if necessary
-    const existingPerson = await getPersonByEmail(supabase, email);
+    // Ensure person exists, creating if necessary using JWT-protected select
+    const emailToken = signRlsJwt({ email });
+    const supabaseEmail = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { global: { headers: { Authorization: `Bearer ${emailToken}` } } }
+    );
+    const { data: existingPerson, error: personError } = await supabaseEmail
+      .from('people')
+      .select('id')
+      .eq('email', email)
+      .single();
+    if (personError && personError.code !== 'PGRST116') {
+      throw personError;
+    }
     let personId: string;
     if (!existingPerson) {
       const { data: newPerson, error: createError } = await supabase
@@ -49,18 +64,25 @@ export async function POST(request: Request) {
       personId = existingPerson.id;
     }
 
-    // Check if person is already signed up for this date
-    const { data: existingSignup, error: signupError } = await supabase
+    // Check if person is already signed up for this date using JWT-protected select
+    const signupToken = signRlsJwt({
+      person_id: personId,
+      open_mic_date_id: activeDate.id,
+    });
+    const supabaseSignup = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { global: { headers: { Authorization: `Bearer ${signupToken}` } } }
+    );
+    const { data: existingSignup, error: signupError } = await supabaseSignup
       .from('sign_ups')
       .select('*')
       .eq('person_id', personId)
       .eq('open_mic_date_id', activeDate.id)
       .single();
-
     if (signupError && signupError.code !== 'PGRST116') {
       throw signupError;
     }
-
     if (existingSignup) {
       return NextResponse.json(
         { error: 'You are already signed up for this date' },
@@ -70,13 +92,17 @@ export async function POST(request: Request) {
 
     // Check if comedian slots are full for this date
     if (type === 'comedian') {
-      const { count } = await supabase
-        .from('sign_ups')
-        .select('*', { count: 'exact', head: true })
-        .eq('open_mic_date_id', activeDate.id);
-      
-      const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
-      if ((count || 0) >= maxSlots) {
+      const { data: countRow, error: countError } = await supabase
+        .from('comedian_signup_count')
+        .select('comedian_count')
+        .eq('open_mic_date_id', activeDate.id)
+        .single();
+      if (countError) throw countError;
+      const comedianCount = countRow?.comedian_count ?? 0;
+      const maxSlots = parseInt(
+        process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20'
+      );
+      if (comedianCount >= maxSlots) {
         return NextResponse.json(
           { error: 'Sorry, all comedian slots are full for this date!' },
           { status: 400 }

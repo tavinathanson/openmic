@@ -60,13 +60,24 @@ CREATE POLICY open_mic_dates_select ON open_mic_dates
 CREATE POLICY open_mic_dates_insert ON open_mic_dates
     FOR INSERT WITH CHECK (true);
 
--- people: allow INSERTS ONLY (no SELECT/UPDATE/DELETE)
+-- people: allow inserts and selects (no updates or deletes, and selects are protected by RLS)
 CREATE POLICY people_insert ON people
     FOR INSERT WITH CHECK (true);
+CREATE POLICY people_select ON public.people
+  FOR SELECT
+  USING (
+    email = auth.jwt() ->> 'email'
+  );
 
--- sign_ups: allow INSERTS ONLY (no SELECT/UPDATE/DELETE)
+-- sign_ups: allow inserts and selects (no updates or deletes, and selects are protected by RLS)
 CREATE POLICY signups_insert ON sign_ups
     FOR INSERT WITH CHECK (true);
+CREATE POLICY signups_select ON public.sign_ups
+  FOR SELECT
+  USING (
+    person_id        = (auth.jwt() ->> 'person_id')::uuid
+    AND open_mic_date_id = (auth.jwt() ->> 'open_mic_date_id')::uuid
+  ); 
 
 -- Create a view for counting comedian sign-ups per date (for slot counter)
 CREATE OR REPLACE VIEW comedian_signup_count AS
