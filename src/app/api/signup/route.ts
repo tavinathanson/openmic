@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendConfirmationEmail } from '@/lib/resend';
 import { parseISO } from 'date-fns';
+import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
 
 export async function POST(request: Request) {
   try {
@@ -22,47 +23,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get the active open mic date
-    const { data: dateData, error: dateError } = await supabase
-      .from('open_mic_dates')
-      .select('id')
-      .eq('is_active', true)
-      .order('date', { ascending: true })
-      .limit(1)
-      .single();
-
-    if (dateError || !dateData) {
+    // Get active date (or return 400)
+    let activeDate;
+    try {
+      activeDate = await getActiveOpenMicDate(supabase);
+    } catch {
       return NextResponse.json(
         { error: 'No active open mic date found' },
         { status: 400 }
       );
     }
 
-    // Start a transaction
-    const { data: personData, error: personError } = await supabase
-      .from('people')
-      .select('*')
-      .eq('email', email)
-      .single();
-
+    // Ensure person exists, creating if necessary
+    const existingPerson = await getPersonByEmail(supabase, email);
     let personId: string;
-    if (personError && personError.code === 'PGRST116') {
-      // Person doesn't exist, create them
+    if (!existingPerson) {
       const { data: newPerson, error: createError } = await supabase
         .from('people')
-        .insert([{
-          email,
-          full_name: full_name || null
-        }])
+        .insert([{ email, full_name: full_name || null }])
         .select()
         .single();
-
       if (createError) throw createError;
       personId = newPerson.id;
-    } else if (personError) {
-      throw personError;
     } else {
-      personId = personData.id;
+      personId = existingPerson.id;
     }
 
     // Check if person is already signed up for this date
@@ -70,7 +54,7 @@ export async function POST(request: Request) {
       .from('sign_ups')
       .select('*')
       .eq('person_id', personId)
-      .eq('open_mic_date_id', dateData.id)
+      .eq('open_mic_date_id', activeDate.id)
       .single();
 
     if (signupError && signupError.code !== 'PGRST116') {
@@ -89,7 +73,7 @@ export async function POST(request: Request) {
       const { count } = await supabase
         .from('sign_ups')
         .select('*', { count: 'exact', head: true })
-        .eq('open_mic_date_id', dateData.id);
+        .eq('open_mic_date_id', activeDate.id);
       
       const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
       if ((count || 0) >= maxSlots) {
@@ -105,7 +89,7 @@ export async function POST(request: Request) {
       .from('sign_ups')
       .insert([{
         person_id: personId,
-        open_mic_date_id: dateData.id,
+        open_mic_date_id: activeDate.id,
         number_of_people: number_of_people || 1,
         first_mic_ever: first_mic_ever || false,
         signup_type: type
@@ -120,7 +104,7 @@ export async function POST(request: Request) {
       const { data: openMicDate, error: dateError } = await supabase
         .from('open_mic_dates')
         .select('date, time, timezone')
-        .eq('id', dateData.id)
+        .eq('id', activeDate.id)
         .single();
       
       if (dateError || !openMicDate) {

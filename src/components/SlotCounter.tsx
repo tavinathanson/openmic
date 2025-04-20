@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { getActiveOpenMicDate } from '@/lib/openMic';
 
 export default function SlotCounter() {
   const [remainingSlots, setRemainingSlots] = useState<number>(0);
@@ -11,16 +12,10 @@ export default function SlotCounter() {
 
   useEffect(() => {
     async function fetchSlots() {
-      // Get the active open mic date
-      const { data: dateData, error: dateError } = await supabase
-        .from('open_mic_dates')
-        .select('*')
-        .eq('is_active', true)
-        .order('date', { ascending: true })
-        .limit(1)
-        .single();
-
-      if (dateError || !dateData) {
+      let dateData;
+      try {
+        dateData = await getActiveOpenMicDate(supabase);
+      } catch {
         setRemainingSlots(0);
         setCurrentDate(null);
         return;

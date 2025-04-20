@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
 
 export async function POST(request: Request) {
   try {
@@ -20,16 +21,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get the active open mic date
-    const { data: dateData, error: dateError } = await supabase
-      .from('open_mic_dates')
-      .select('id')
-      .eq('is_active', true)
-      .order('date', { ascending: true })
-      .limit(1)
-      .single();
-
-    if (dateError || !dateData) {
+    // Get the active open mic date (throws if none)
+    let activeDate;
+    try {
+      activeDate = await getActiveOpenMicDate(supabase);
+    } catch {
       return NextResponse.json(
         { error: 'No active open mic date found' },
         { status: 400 }
@@ -37,15 +33,7 @@ export async function POST(request: Request) {
     }
 
     // First, check if the email exists in the people table
-    const { data: personData, error: personError } = await supabase
-      .from('people')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (personError && personError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-      throw personError;
-    }
+    const personData = await getPersonByEmail(supabase, email);
 
     // If person exists, check if they're already signed up for this date
     if (personData) {
@@ -53,7 +41,7 @@ export async function POST(request: Request) {
         .from('sign_ups')
         .select('*')
         .eq('person_id', personData.id)
-        .eq('open_mic_date_id', dateData.id)
+        .eq('open_mic_date_id', activeDate.id)
         .single();
 
       if (signupError && signupError.code !== 'PGRST116') {

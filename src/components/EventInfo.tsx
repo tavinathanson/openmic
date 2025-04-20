@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { getActiveOpenMicDate } from '@/lib/openMic';
 
 export default function EventInfo() {
   const [date, setDate] = useState<string | null>(null);
@@ -10,20 +11,9 @@ export default function EventInfo() {
 
   useEffect(() => {
     async function fetchDate() {
-      const { data, error } = await supabase
-        .from('open_mic_dates')
-        .select('date, time')
-        .eq('is_active', true)
-        .order('date', { ascending: true })
-        .limit(1)
-        .single();
+      try {
+        const data = await getActiveOpenMicDate(supabase);
 
-      if (error) {
-        console.error('Error fetching date:', error);
-        return;
-      }
-
-      if (data) {
         const dateObj = new Date(data.date + 'T00:00:00');
         const formattedDate = dateObj.toLocaleDateString('en-US', {
           weekday: 'long',
@@ -44,6 +34,8 @@ export default function EventInfo() {
           hour12: true
         });
         setTime(formattedTime);
+      } catch (error) {
+        console.error('Error fetching date:', error);
       }
     }
 
