@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
+import { signRlsJwt } from '@/lib/jwt';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createServerSupabaseClient();
     const { email, type } = await request.json();
 
     if (!email || !type) {
@@ -20,6 +20,22 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    // Create a JWT token with the email being validated
+    const token = signRlsJwt({ email });
+
+    // Create a Supabase client with the JWT token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      }
+    );
 
     // Get the active open mic date (throws if none)
     let activeDate;
