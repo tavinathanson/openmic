@@ -135,6 +135,11 @@ export default function EventInfo() {
           </div>
         </div>
       </div>
+      <div className="mt-6 pt-6 border-t border-border">
+        <p className="text-sm text-muted text-center">
+          Lineup order is determined by lottery. Sign up early and arrive by {formattedArrivalTime} for extra entries!
+        </p>
+      </div>
     </div>
   );
 } 
