@@ -320,6 +320,12 @@ export default function SignupForm() {
         </div>
       )}
 
+      {type === 'comedian' && (
+        <div className="text-sm text-muted text-center">
+          No worries if plans change! Canceling your spot is easy.
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={status === 'loading' || !isFormValid || alreadySignedUp}
