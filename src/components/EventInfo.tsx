@@ -139,6 +139,9 @@ export default function EventInfo() {
         <p className="text-sm text-muted text-center">
           Lineup order is determined by lottery. Sign up early and arrive by {formattedArrivalTime} for extra entries!
         </p>
+        <p className="text-sm text-muted text-center mt-2">
+          Questions? Email <a href="mailto:tavi@tavicomedy.com" className="text-primary hover:underline">tavi@tavicomedy.com</a>
+        </p>
       </div>
     </div>
   );
