@@ -314,7 +314,7 @@ export default function SignupForm() {
               className="h-5 w-5 rounded border-muted-light text-primary focus:ring-primary"
             />
             <label htmlFor="firstMicEver" className="text-sm text-muted">
-              This is my first open mic ever! (Free cookie 🍪)
+              This is my first time performing ever! (Free cookie 🍪)
             </label>
           </div>
         </div>
