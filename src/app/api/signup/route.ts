@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { createClient } from '@supabase/supabase-js';
 import { signRlsJwt } from '@/lib/jwt';
-import { sendConfirmationEmail } from '@/lib/resend';
+import { sendConfirmationEmail, sendWaitlistEmail } from '@/lib/resend';
 import { parseISO } from 'date-fns';
 import { getActiveOpenMicDate } from '@/lib/openMic';
 
@@ -101,10 +101,59 @@ export async function POST(request: Request) {
         process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20'
       );
       if ((comedianCount ?? 0) >= maxSlots) {
-        return NextResponse.json(
-          { error: 'Sorry, all comedian slots are full for this date!' },
-          { status: 400 }
-        );
+        // Create waitlist signup instead
+        const { data: signupData, error: createSignupError } = await supabaseSignup
+          .from('sign_ups')
+          .insert([{
+            person_id: personId,
+            open_mic_date_id: activeDate.id,
+            number_of_people: number_of_people || 1,
+            first_mic_ever: first_mic_ever || false,
+            signup_type: type,
+            is_waitlist: true
+          }])
+          .select()
+          .single();
+
+        if (createSignupError) throw createSignupError;
+
+        // Send waitlist confirmation email
+        try {
+          const { data: openMicDate, error: dateError } = await supabase
+            .from('open_mic_dates')
+            .select('date, time, timezone')
+            .eq('id', activeDate.id)
+            .single();
+          
+          if (dateError || !openMicDate) {
+            throw new Error('Failed to get open mic date');
+          }
+
+          const eventDate = parseISO(openMicDate.date);
+          if (isNaN(eventDate.getTime())) {
+            throw new Error('Invalid date format from database');
+          }
+
+          const [hours, minutes] = openMicDate.time.split(':');
+          const timeObj = new Date();
+          timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
+          
+          await sendWaitlistEmail(
+            email, 
+            signupData.id,
+            eventDate,
+            openMicDate.time,
+            openMicDate.timezone
+          );
+        } catch (emailError) {
+          console.error('Failed to send waitlist email:', emailError);
+        }
+
+        return NextResponse.json({ 
+          success: true,
+          is_waitlist: true,
+          message: 'You have been added to the waitlist!'
+        });
       }
     }
 

@@ -16,17 +16,28 @@ const SENDER_NAME = process.env.NODE_ENV === 'development'
   ? 'Tavi Nathanson Test Account'
   : 'Tavi Nathanson';
 
-export async function sendConfirmationEmail(
-  email: string, 
-  type: 'comedian' | 'audience', 
-  id: string,
-  date: Date,
-  time: string,
-  timezone: string = 'America/New_York'
-) {
+interface EmailParams {
+  email: string;
+  id: string;
+  date: Date;
+  time: string;
+  timezone?: string;
+  type?: 'comedian' | 'audience';
+  isWaitlist?: boolean;
+}
+
+async function sendEmail({
+  email,
+  id,
+  date,
+  time,
+  timezone = 'America/New_York',
+  type = 'comedian',
+  isWaitlist = false
+}: EmailParams) {
   // Validate date
   if (!date || isNaN(date.getTime())) {
-    throw new Error('Invalid date provided for email confirmation');
+    throw new Error('Invalid date provided for email');
   }
 
   const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=${type}`;
@@ -47,15 +58,57 @@ export async function sendConfirmationEmail(
   const timeObj = new Date(timeString);
   const formattedTime = formatInTimeZone(timeObj, timezone, 'h:mm a');
 
-  const comedianMessage = `Thank you for signing up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
-  
-  const audienceMessage = `Thank you for signing up to attend the Crave Laughs open mic night at ${formattedTime} ${dateText}! See you there!`;
+  let message: string;
+  if (isWaitlist) {
+    message = `Thank you for adding your name to the waitlist for the Crave Laughs open mic at ${formattedTime} ${dateText}! I'll let you know if a spot opens up.`;
+  } else if (type === 'comedian') {
+    message = `Thank you for signing up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
+  } else {
+    message = `Thank you for signing up to attend the Crave Laughs open mic night at ${formattedTime} ${dateText}! See you there!`;
+  }
   
   await resend.emails.send({
     from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
     to: email,
     bcc: 'tavi.nathanson@gmail.com',
-    subject: 'Crave Laughs Open Mic Signup Confirmation',
-    html: `<p>${type === 'comedian' ? comedianMessage : audienceMessage}</p>`,
+    subject: isWaitlist 
+      ? 'Crave Laughs Open Mic Waitlist Confirmation'
+      : 'Crave Laughs Open Mic Signup Confirmation',
+    html: `<p>${message}</p>`,
+  });
+}
+
+export async function sendConfirmationEmail(
+  email: string, 
+  type: 'comedian' | 'audience', 
+  id: string,
+  date: Date,
+  time: string,
+  timezone: string = 'America/New_York'
+) {
+  return sendEmail({
+    email,
+    id,
+    date,
+    time,
+    timezone,
+    type
+  });
+}
+
+export async function sendWaitlistEmail(
+  email: string,
+  id: string,
+  date: Date,
+  time: string,
+  timezone: string = 'America/New_York'
+) {
+  return sendEmail({
+    email,
+    id,
+    date,
+    time,
+    timezone,
+    isWaitlist: true
   });
 }

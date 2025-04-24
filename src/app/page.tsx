@@ -1,3 +1,5 @@
+'use client';
+
 import SignupForm from '@/components/SignupForm';
 import SlotCounter from '@/components/SlotCounter';
 import EventInfo from '@/components/EventInfo';

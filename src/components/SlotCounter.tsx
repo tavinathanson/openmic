@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { getActiveOpenMicDate } from '@/lib/openMic';
+
+// Create a ref to share the isFull state
+export const slotsFullRef = { current: false };
 
 export default function SlotCounter() {
   const [remainingSlots, setRemainingSlots] = useState<number>(0);
   const [currentDate, setCurrentDate] = useState<string | null>(null);
+  const [isFull, setIsFull] = useState(false);
   const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
   const supabase = createClient();
 
@@ -45,6 +49,9 @@ export default function SlotCounter() {
       const currentCount = comedianCount ?? 0;
       
       setRemainingSlots(maxSlots - currentCount);
+      const newIsFull = currentCount >= maxSlots;
+      setIsFull(newIsFull);
+      slotsFullRef.current = newIsFull;
     }
 
     // Initial fetch
@@ -70,15 +77,17 @@ export default function SlotCounter() {
     <div className="text-center space-y-6">
       <div className="space-y-2">
         <h2 className="text-3xl font-heading font-bold text-foreground">
-          {remainingSlots} Comedian Slots Left
+          {isFull ? `All ${maxSlots} Comedian Slots Full` : `${remainingSlots} Comedian Slots Left`}
         </h2>
         <p className="text-sm text-muted">
-          {remainingSlots === 0 ? 'No slots remaining' : `${remainingSlots} of ${maxSlots} slots available`}
+          {isFull ? `Add your name to the waitlist! People cancel all the time.` : `${remainingSlots} of ${maxSlots} slots available`}
         </p>
       </div>
       <div className="w-full bg-muted-light/5 rounded-full h-2 overflow-hidden">
         <div
-          className="bg-primary h-full rounded-full transition-all duration-700 ease-out"
+          className={`h-full rounded-full transition-all duration-700 ease-out ${
+            isFull ? 'bg-red-500' : 'bg-primary'
+          }`}
           style={{ width: `${(remainingSlots / maxSlots) * 100}%` }}
         ></div>
       </div>

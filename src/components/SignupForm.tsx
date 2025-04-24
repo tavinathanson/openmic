@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import validator from 'email-validator';
+import { slotsFullRef } from './SlotCounter';
 
 type SignupType = 'comedian' | 'audience';
 
-export default function SignupForm() {
+interface SignupFormProps {
+  slotsFull?: boolean;
+}
+
+export default function SignupForm({ slotsFull = false }: SignupFormProps) {
   const [email, setEmail] = useState('');
   const [type, setType] = useState<SignupType>('comedian');
   const [status, setStatus] = useState<'idle' | 'loading' | 'validating' | 'success' | 'error'>('idle');
@@ -18,6 +23,22 @@ export default function SignupForm() {
   const [alreadySignedUp, setAlreadySignedUp] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [firstMicEver, setFirstMicEver] = useState(false);
+  const [isWaitlist, setIsWaitlist] = useState(false);
+  const [areSlotsFull, setAreSlotsFull] = useState(false);
+
+  // Update slotsFull state when ref changes
+  useEffect(() => {
+    const checkSlots = () => {
+      setAreSlotsFull(slotsFullRef.current);
+    };
+    
+    // Initial check
+    checkSlots();
+    
+    // Check every second for changes
+    const interval = setInterval(checkSlots, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Debounced email validation
   useEffect(() => {
@@ -123,7 +144,8 @@ export default function SignupForm() {
       }
 
       setStatus('success');
-      setMessage('You\'re signed up! You\'ll also get a confirmation email.');
+      setIsWaitlist(data.is_waitlist || false);
+      setMessage(data.message || 'You\'re signed up! You\'ll also get a confirmation email.');
       setEmail('');
       setFullName('');
       setNumberOfPeople('1');
@@ -320,7 +342,7 @@ export default function SignupForm() {
         </div>
       )}
 
-      {type === 'comedian' && (
+      {type === 'comedian' && !areSlotsFull && (
         <div className="text-sm text-muted text-center">
           No worries if plans change! Canceling your spot is easy.
         </div>
@@ -331,14 +353,22 @@ export default function SignupForm() {
         disabled={status === 'loading' || !isFormValid || alreadySignedUp}
         className="w-full py-3 px-4 bg-primary text-white rounded-lg font-medium text-lg hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
       >
-        {status === 'loading' ? 'Signing up...' : alreadySignedUp ? 'Already Signed Up' : 'Sign Up'}
+        {status === 'loading' 
+          ? 'Signing up...' 
+          : alreadySignedUp 
+            ? 'Already Signed Up' 
+            : type === 'comedian' && areSlotsFull
+              ? 'Add to Waitlist'
+              : 'Sign Up'}
       </button>
 
       {message && (
         <div
           className={`p-4 rounded-lg border ${
             status === 'success'
-              ? 'bg-green-50 text-green-700 border-green-100'
+              ? isWaitlist
+                ? 'bg-green-50 text-green-700 border-green-100'
+                : 'bg-green-50 text-green-700 border-green-100'
               : 'bg-red-50 text-red-700 border-red-100'
           }`}
         >
