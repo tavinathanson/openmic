@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Poltawski_Nowy } from "next/font/google";
 import Script from "next/script";
-import Image from "next/image";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -48,13 +47,13 @@ export default function RootLayout({
           `}
         </Script>
         <noscript>
-          <Image
-            height={1}
-            width={1}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            height="1"
+            width="1"
             style={{ display: "none" }}
             src="https://www.facebook.com/tr?id=1228947918842988&ev=PageView&noscript=1"
             alt=""
-            priority
           />
         </noscript>
       </head>
