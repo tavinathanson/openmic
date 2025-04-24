@@ -57,11 +57,26 @@ def select_random_comedians(csv_path: str, num_winners: int = 4) -> List[str]:
         tickets = calculate_tickets(row)
         weighted_pool.extend([row['full_name']] * tickets)
     
-    # Randomly select winners
-    if len(weighted_pool) < num_winners:
-        raise ValueError(f"Not enough eligible comedians to select {num_winners} winners")
+    # Check if we have enough unique people to select from
+    unique_people = set(weighted_pool)
+    if len(unique_people) < num_winners:
+        raise ValueError(f"Not enough unique eligible comedians to select {num_winners} winners")
     
-    winners = random.sample(weighted_pool, num_winners)
+    # Randomly select winners without replacement
+    winners = []
+    remaining_pool = weighted_pool.copy()
+    
+    for _ in range(num_winners):
+        if not remaining_pool:
+            raise ValueError("Not enough unique people to select from")
+        
+        # Select a winner
+        winner = random.choice(remaining_pool)
+        winners.append(winner)
+        
+        # Remove all instances of this winner from the pool
+        remaining_pool = [name for name in remaining_pool if name != winner]
+    
     return winners
 
 def main():
