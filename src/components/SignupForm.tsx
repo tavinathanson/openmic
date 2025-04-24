@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import validator from 'email-validator';
 import { slotsFullRef } from './SlotCounter';
+import { trackRegistration } from '@/utils/metaPixel';
 
 type SignupType = 'comedian' | 'audience';
 
@@ -162,6 +163,9 @@ export default function SignupForm() {
       setShowNameField(false);
       setAlreadySignedUp(true);
       setEmailError(null);
+      
+      // Track registration conversion
+      trackRegistration();
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'An error occurred. Please try again.');
