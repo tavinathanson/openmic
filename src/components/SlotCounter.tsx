@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { getActiveOpenMicDate } from '@/lib/openMic';
 

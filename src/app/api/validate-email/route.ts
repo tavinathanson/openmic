@@ -73,7 +73,8 @@ export async function POST(request: Request) {
         exists: true,
         full_name: personData.full_name,
         number_of_people: signupData?.number_of_people || 1,
-        already_signed_up: !!signupData
+        already_signed_up: !!signupData,
+        is_waitlist: signupData?.is_waitlist || false
       });
     }
 

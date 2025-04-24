@@ -6,11 +6,7 @@ import { slotsFullRef } from './SlotCounter';
 
 type SignupType = 'comedian' | 'audience';
 
-interface SignupFormProps {
-  slotsFull?: boolean;
-}
-
-export default function SignupForm({ slotsFull = false }: SignupFormProps) {
+export default function SignupForm() {
   const [email, setEmail] = useState('');
   const [type, setType] = useState<SignupType>('comedian');
   const [status, setStatus] = useState<'idle' | 'loading' | 'validating' | 'success' | 'error'>('idle');
@@ -25,6 +21,7 @@ export default function SignupForm({ slotsFull = false }: SignupFormProps) {
   const [firstMicEver, setFirstMicEver] = useState(false);
   const [isWaitlist, setIsWaitlist] = useState(false);
   const [areSlotsFull, setAreSlotsFull] = useState(false);
+  const [existingSignupIsWaitlist, setExistingSignupIsWaitlist] = useState(false);
 
   // Update slotsFull state when ref changes
   useEffect(() => {
@@ -83,6 +80,7 @@ export default function SignupForm({ slotsFull = false }: SignupFormProps) {
             setFullName('');
           }
           setAlreadySignedUp(data.already_signed_up);
+          setExistingSignupIsWaitlist(data.is_waitlist);
           // Reset first mic ever if email exists
           setFirstMicEver(false);
         } else {
@@ -90,6 +88,7 @@ export default function SignupForm({ slotsFull = false }: SignupFormProps) {
           setFullName('');
           setShowNameField(true);
           setAlreadySignedUp(false);
+          setExistingSignupIsWaitlist(false);
         }
       } catch (error) {
         console.error('Email validation error:', error);
@@ -257,7 +256,7 @@ export default function SignupForm({ slotsFull = false }: SignupFormProps) {
 
       {type === 'comedian' && existingName && alreadySignedUp && (
         <div className="p-4 bg-primary-light/10 text-primary-dark rounded-lg border border-primary-light/20">
-          {existingName}: you&apos;re already signed up for this date! See you there!
+          {existingName}: {existingSignupIsWaitlist ? 'you\'re already on the waitlist!' : 'you\'re already signed up for this date! See you there!'}
         </div>
       )}
 
@@ -354,7 +353,7 @@ export default function SignupForm({ slotsFull = false }: SignupFormProps) {
         className="w-full py-3 px-4 bg-primary text-white rounded-lg font-medium text-lg hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
       >
         {status === 'loading' 
-          ? 'Signing up...' 
+          ? (type === 'comedian' && areSlotsFull ? 'Adding to waitlist...' : 'Signing up...')
           : alreadySignedUp 
             ? 'Already Signed Up' 
             : type === 'comedian' && areSlotsFull
