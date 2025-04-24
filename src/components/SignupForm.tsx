@@ -23,6 +23,16 @@ export default function SignupForm() {
   const [areSlotsFull, setAreSlotsFull] = useState(false);
   const [existingSignupIsWaitlist, setExistingSignupIsWaitlist] = useState(false);
 
+  // Reset state when type changes
+  useEffect(() => {
+    setAlreadySignedUp(false);
+    setExistingSignupIsWaitlist(false);
+    setAreSlotsFull(false);
+    setIsWaitlist(false);
+    setStatus('idle');
+    setMessage('');
+  }, [type]);
+
   // Update slotsFull state when ref changes
   useEffect(() => {
     const checkSlots = () => {
