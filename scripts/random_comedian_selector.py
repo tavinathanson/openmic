@@ -34,10 +34,11 @@ def select_random_comedians(csv_path: str, num_winners: int = 4) -> List[str]:
     # Convert 'done' column to string type
     df['done'] = df['done'].astype(str)
     
-    # Filter for comedians who haven't been marked as done
+    # Filter for comedians who haven't been marked as done, and who are marked as "here"
     comedians = df[
         (df['signup_type'] == 'comedian') & 
-        (~df['done'].str.upper().isin(['X', 'x']))
+        (~df['done'].str.upper().isin(['X', 'x'])) &
+        (df['here'].str.upper().isin(['X', 'x']))
     ]
     
     if len(comedians) == 0:
