@@ -10,11 +10,17 @@ if (!process.env.NEXT_PUBLIC_APP_EMAIL) {
   throw new Error('Missing env.NEXT_PUBLIC_APP_EMAIL');
 }
 
+if (!process.env.EXTRA_NOTIFY_EMAIL) {
+  throw new Error('Missing env.EXTRA_NOTIFY_EMAIL');
+}
+
 export const resend = new Resend(process.env.RESEND_API_KEY);
 
 const SENDER_NAME = process.env.NODE_ENV === 'development' 
   ? 'Tavi Nathanson Test Account'
   : 'Tavi Nathanson';
+
+const EXTRA_NOTIFY_EMAIL = process.env.EXTRA_NOTIFY_EMAIL;
 
 interface EmailParams {
   email: string;
@@ -70,7 +76,7 @@ async function sendEmail({
   await resend.emails.send({
     from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
     to: email,
-    bcc: 'tavi.nathanson@gmail.com',
+    bcc: EXTRA_NOTIFY_EMAIL,
     subject: isWaitlist 
       ? 'Crave Laughs Open Mic Waitlist Confirmation'
       : 'Crave Laughs Open Mic Signup Confirmation',
@@ -110,5 +116,25 @@ export async function sendWaitlistEmail(
     time,
     timezone,
     isWaitlist: true
+  });
+}
+
+export async function sendCancellationNotification(
+  email: string,
+  fullName: string,
+  type: 'comedian' | 'audience'
+) {
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
+    to: EXTRA_NOTIFY_EMAIL,
+    subject: `Open Mic Cancellation: ${fullName}`,
+    html: `
+      <p>Someone has cancelled their signup:</p>
+      <ul>
+        <li>Name: ${fullName}</li>
+        <li>Email: ${email}</li>
+        <li>Type: ${type}</li>
+      </ul>
+    `,
   });
 }

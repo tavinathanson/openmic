@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { signRlsJwt } from '@/lib/jwt';
 import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
+import { sendCancellationNotification } from '@/lib/resend';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -25,6 +26,8 @@ export async function GET(request: Request) {
     }
 
     let signupId: string;
+    let personEmail: string | undefined;
+    let personName: string | undefined;
 
     if (id && type) {
       // If ID and type are provided, use them directly
@@ -35,6 +38,26 @@ export async function GET(request: Request) {
         );
       }
       signupId = id;
+
+      // Get person data for notification
+      const { data: signupData } = await supabase
+        .from('sign_ups')
+        .select('person_id')
+        .eq('id', id)
+        .single();
+
+      if (signupData) {
+        const { data: personData } = await supabase
+          .from('people')
+          .select('email, full_name')
+          .eq('id', signupData.person_id)
+          .single();
+
+        if (personData) {
+          personEmail = personData.email;
+          personName = personData.full_name;
+        }
+      }
     } else if (email) {
       // If email is provided, look up the signup
       const emailToken = signRlsJwt({ email });
@@ -51,6 +74,9 @@ export async function GET(request: Request) {
           { status: 404 }
         );
       }
+
+      personEmail = personData.email;
+      personName = personData.full_name;
 
       // Get the signup for this person and date
       const signupToken = signRlsJwt({
@@ -109,6 +135,20 @@ export async function GET(request: Request) {
       .eq('id', signupId);
 
     if (error) throw error;
+
+    // Send cancellation notification to Tavi
+    if (personEmail && personName) {
+      try {
+        await sendCancellationNotification(
+          personEmail,
+          personName,
+          type as 'comedian' | 'audience'
+        );
+      } catch (emailError) {
+        console.error('Failed to send cancellation notification:', emailError);
+        // Don't throw - we still want to return success since the cancellation worked
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
