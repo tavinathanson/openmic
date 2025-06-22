@@ -138,3 +138,30 @@ export async function sendCancellationNotification(
     `,
   });
 }
+
+// Placeholder for new ticket confirmation email function
+export interface TicketEmailParams {
+  email: string;
+  ticketId: string;
+  showName: string;
+  showDate: Date;
+  showTime: string;
+  quantity: number;
+  totalAmount: number;
+  purchaseDate: Date;
+}
+
+export async function sendTicketConfirmationEmail(params: TicketEmailParams) {
+  // TODO: Implement actual email sending logic using Resend
+  console.log('Sending ticket confirmation email (placeholder):', params);
+  // Example using existing sendEmail structure (you'll need to adapt it)
+  // const { email, ticketId, showName, showDate, showTime, quantity, totalAmount, purchaseDate } = params;
+  // const message = `Your ticket for ${showName} is confirmed! Details: ...`;
+  // await resend.emails.send({
+  //   from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
+  //   to: email,
+  //   subject: `Your Ticket for ${showName}`,
+  //   html: `<p>${message}</p>`,
+  // });
+  return Promise.resolve();
+}
