@@ -14,6 +14,7 @@ Mostly written by AI tools, including this README! Except this line. A human wro
 - Real-time updates using Supabase subscriptions
 - Date-specific open mic events and signups
 - Active date management system
+- Encourage users to support the venue with a purchase
 
 ## Quick Start
 

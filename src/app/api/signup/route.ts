@@ -9,7 +9,7 @@ import { getActiveOpenMicDate } from '@/lib/openMic';
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
-    const { email, type, full_name, number_of_people, first_mic_ever } = await request.json();
+    const { email, type, full_name, number_of_people, first_mic_ever, will_support } = await request.json();
 
     if (!email || !type) {
       return NextResponse.json(
@@ -110,7 +110,8 @@ export async function POST(request: Request) {
             number_of_people: number_of_people || 1,
             first_mic_ever: first_mic_ever || false,
             signup_type: type,
-            is_waitlist: true
+            is_waitlist: true,
+            will_support: will_support || false,
           }])
           .select()
           .single();
@@ -165,7 +166,8 @@ export async function POST(request: Request) {
         open_mic_date_id: activeDate.id,
         number_of_people: number_of_people || 1,
         first_mic_ever: first_mic_ever || false,
-        signup_type: type
+        signup_type: type,
+        will_support: will_support || false,
       }])
       .select()
       .single();

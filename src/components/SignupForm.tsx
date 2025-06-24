@@ -23,6 +23,7 @@ export default function SignupForm() {
   const [isWaitlist, setIsWaitlist] = useState(false);
   const [areSlotsFull, setAreSlotsFull] = useState(false);
   const [existingSignupIsWaitlist, setExistingSignupIsWaitlist] = useState(false);
+  const [willSupport, setWillSupport] = useState(false);
 
   // Reset state when type changes
   useEffect(() => {
@@ -143,7 +144,8 @@ export default function SignupForm() {
           type,
           full_name: existingName || fullName,
           number_of_people: numPeople,
-          first_mic_ever: type === 'comedian' ? firstMicEver : false
+          first_mic_ever: type === 'comedian' ? firstMicEver : false,
+          will_support: willSupport,
         }),
       });
 
@@ -230,6 +232,12 @@ export default function SignupForm() {
             </svg>
             <span><b>5 minutes</b> per comedian, or <b>7 minutes</b> if you bring 1+ non-performing guests</span>
           </div>
+        </div>
+      )}
+
+      {type === 'comedian' && !areSlotsFull && (
+        <div className="text-sm text-muted text-center mb-4">
+          No worries if plans change! Canceling your spot is easy.
         </div>
       )}
 
@@ -340,24 +348,38 @@ export default function SignupForm() {
 
       {type === 'comedian' && !existingName && !alreadySignedUp && !isValidating && email && !emailError && (
         <div className="space-y-4">
-          <div className="flex items-center space-x-3 p-4 bg-muted-light/5 rounded-lg border border-muted-light/10">
+          <div className="flex items-center space-x-2 p-4 bg-muted-light/5 rounded-lg border border-muted-light/10">
             <input
               type="checkbox"
               id="firstMicEver"
               checked={firstMicEver}
               onChange={(e) => setFirstMicEver(e.target.checked)}
-              className="h-5 w-5 rounded border-muted-light text-primary focus:ring-primary"
+              className="h-4 w-4 rounded border-muted-light text-primary focus:ring-primary"
             />
-            <label htmlFor="firstMicEver" className="text-sm text-muted">
+            <label htmlFor="firstMicEver" className="text-sm text-muted-dark font-medium">
               This is my first time ever performing comedy! (Free cookie 🍪)
             </label>
           </div>
         </div>
       )}
 
-      {type === 'comedian' && !areSlotsFull && (
-        <div className="text-sm text-muted text-center">
-          No worries if plans change! Canceling your spot is easy.
+      {!alreadySignedUp && (
+        <div className="p-4 bg-muted-light/5 text-muted-dark rounded-lg border border-muted-light/10">
+          <p className="text-sm mb-3">
+            This open mic is only possible thanks to our hosts at Crave. To keep the show going, please support them with a purchase if you can. This is not required, but is very much appreciated!
+          </p>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="supportCrave"
+              checked={willSupport}
+              onChange={(e) => setWillSupport(e.target.checked)}
+              className="h-4 w-4 rounded border-muted-light text-primary focus:ring-primary"
+            />
+            <label htmlFor="supportCrave" className="text-sm font-medium">
+              I&apos;ll grab a bite or drink to help keep this mic free! ☕
+            </label>
+          </div>
         </div>
       )}
 
