@@ -13,8 +13,8 @@ const PhotoGallery = () => {
   // This will be populated with your actual photos
   const photos = [
     {
-      src: '/images/3_2025_mic_2.jpg',
-      text: 'Crowd goes wild for Suzanne Linfante!'
+      src: '/images/5_2025_mic_2.jpg',
+      text: 'Becky Z!'
     },
     {
       src: '/images/10_2024_mic.jpg',
