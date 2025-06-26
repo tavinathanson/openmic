@@ -104,7 +104,7 @@ export default function SignupForm() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ email, type }),
+          body: JSON.stringify({ email: email.toLowerCase(), type }),
         });
 
         const data = await response.json();
@@ -187,7 +187,7 @@ export default function SignupForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          email: email.toLowerCase(),
           type,
           full_name: existingName || fullName,
           number_of_people: numPeople,
@@ -396,7 +396,7 @@ export default function SignupForm() {
         </div>
       )}
 
-      {type === 'comedian' && !existingName && !alreadySignedUp && !isValidating && email && !emailError && (
+      {type === 'comedian' && showNameField && !alreadySignedUp && (
         <div className="space-y-4">
           <div className="flex items-center space-x-2 p-4 bg-muted-light/5 rounded-lg border border-muted-light/10">
             <input

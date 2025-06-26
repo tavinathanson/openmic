@@ -70,6 +70,10 @@ The application uses Supabase Row Level Security (RLS) with JWT authentication:
 
 JWT tokens (5-minute lifespan) secure database operations like email validation, signup management, and cancellations.
 
+## Email Case Sensitivity
+
+The application handles email case sensitivity gracefully to ensure a consistent user experience. When users enter emails like `Test@example.com` vs `test@example.com`, the system treats them as the same person. This is achieved through a dual approach: emails are normalized to lowercase on the frontend before API calls (preventing future mixed-case data), while the backend uses case-insensitive database queries (`ilike`) to handle existing mixed-case data. This solution avoids the need for database migrations while ensuring both old and new users experience consistent behavior.
+
 ## Timezone Handling
 
 The application properly handles timezone differences for date formatting in emails. Email confirmations display "tonight", "tomorrow", or specific dates based on the event's timezone rather than the server's timezone, ensuring users see accurate relative dates regardless of where the server is hosted.

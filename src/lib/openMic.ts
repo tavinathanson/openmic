@@ -22,7 +22,7 @@ export async function getPersonByEmail(supabase: SupabaseClient, email: string) 
   const { data, error } = await supabase
     .from('people')
     .select('*')
-    .eq('email', email)
+    .ilike('email', email)
     .single();
 
   if (error && error.code !== 'PGRST116') {

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const { data: existingPerson, error: personError } = await supabaseEmail
       .from('people')
       .select('id')
-      .eq('email', email)
+      .ilike('email', email)
       .single();
     if (personError && personError.code !== 'PGRST116') {
       throw personError;
