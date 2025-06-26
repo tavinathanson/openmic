@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest",
     "db:push": "NODE_ENV=development node --loader ts-node/esm scripts/db.ts push",
     "db:push:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts push",
     "db:pull": "NODE_ENV=development node --loader ts-node/esm scripts/db.ts pull",
@@ -39,14 +40,18 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
     "@types/dotenv": "^8.2.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
+    "jsdom": "^26.1.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

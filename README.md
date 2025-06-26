@@ -8,7 +8,7 @@ Mostly written by AI tools, including this README! Except this line. A human wro
 
 - Real-time comedian slot counter
 - Sign up as either a comedian or audience member
-- Email confirmation and reminder system
+- Email confirmation and reminder system with timezone-aware date formatting
 - Easy signup cancellation via email link
 - Responsive design
 - Real-time updates using Supabase subscriptions
@@ -69,6 +69,10 @@ The application uses Supabase Row Level Security (RLS) with JWT authentication:
 - **Signups**: Public signup, protected access for personal signups
 
 JWT tokens (5-minute lifespan) secure database operations like email validation, signup management, and cancellations.
+
+## Timezone Handling
+
+The application properly handles timezone differences for date formatting in emails. Email confirmations display "tonight", "tomorrow", or specific dates based on the event's timezone rather than the server's timezone, ensuring users see accurate relative dates regardless of where the server is hosted.
 
 ## Deployment
 

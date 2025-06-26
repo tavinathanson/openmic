@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
-import { parseISO, format, isToday, isTomorrow } from 'date-fns';
+import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
+import { getDateText } from './date-utils';
 
 if (!process.env.RESEND_API_KEY) {
   throw new Error('Missing env.RESEND_API_KEY');
@@ -48,15 +49,8 @@ async function sendEmail({
 
   const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=${type}`;
   
-  // Parse the date string from the database
-  const eventDate = parseISO(date.toISOString());
-  
-  // Format the date text
-  const dateText = isToday(eventDate)
-    ? 'tonight' 
-    : isTomorrow(eventDate)
-    ? 'tomorrow'
-    : `on ${format(eventDate, 'MMMM d')}`;
+  // Format the date text using timezone-aware logic
+  const dateText = getDateText(date, timezone);
 
   // Format time in the specified timezone
   const [hours, minutes] = time.split(':');
