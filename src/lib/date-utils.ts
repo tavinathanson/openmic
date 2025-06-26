@@ -1,5 +1,5 @@
-import { parseISO, format } from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 export function getDateText(date: Date, timezone: string = 'America/New_York'): string {
   console.log('getDateText called with:', {
