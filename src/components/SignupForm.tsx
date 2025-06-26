@@ -24,6 +24,39 @@ export default function SignupForm() {
   const [areSlotsFull, setAreSlotsFull] = useState(false);
   const [existingSignupIsWaitlist, setExistingSignupIsWaitlist] = useState(false);
   const [willSupport, setWillSupport] = useState(false);
+  const [captchaQuestion, setCaptchaQuestion] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [userCaptchaAnswer, setUserCaptchaAnswer] = useState('');
+
+  // Generate captcha question
+  const generateCaptcha = () => {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    const operations = ['+', '-'];
+    const operation = operations[Math.floor(Math.random() * operations.length)];
+    
+    let answer;
+    let question;
+    if (operation === '+') {
+      answer = num1 + num2;
+      question = `${num1} + ${num2}`;
+    } else {
+      // Ensure positive result for subtraction
+      const larger = Math.max(num1, num2);
+      const smaller = Math.min(num1, num2);
+      answer = larger - smaller;
+      question = `${larger} - ${smaller}`;
+    }
+    
+    setCaptchaQuestion(question);
+    setCaptchaAnswer(answer.toString());
+    setUserCaptchaAnswer('');
+  };
+
+  // Generate captcha on mount
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
 
   // Reset state when type changes
   useEffect(() => {
@@ -133,6 +166,14 @@ export default function SignupForm() {
       return;
     }
 
+    // Validate captcha
+    if (userCaptchaAnswer.trim() !== captchaAnswer) {
+      setStatus('error');
+      setMessage('Incorrect answer. Please try again.');
+      generateCaptcha(); // Generate new question
+      return;
+    }
+
     try {
       const response = await fetch('/api/signup', {
         method: 'POST',
@@ -165,6 +206,7 @@ export default function SignupForm() {
       setShowNameField(false);
       setAlreadySignedUp(true);
       setEmailError(null);
+      generateCaptcha(); // Generate new captcha after successful submission
       
       // Track registration conversion
       trackRegistration();
@@ -182,7 +224,8 @@ export default function SignupForm() {
     !emailError &&
     (existingName || (fullName && fullName.trim().length > 0)) &&
     numberOfPeople &&
-    !alreadySignedUp;
+    !alreadySignedUp &&
+    userCaptchaAnswer.trim() !== '';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -380,6 +423,31 @@ export default function SignupForm() {
               I&apos;ll grab a bite or drink to help keep this mic free! ☕
             </label>
           </div>
+        </div>
+      )}
+
+      {!alreadySignedUp && (
+        <div>
+          <label htmlFor="captcha" className="block text-sm font-medium text-muted mb-2">
+            Quick math check to catch bots: What is {captchaQuestion}?
+          </label>
+          <input
+            type="text"
+            id="captcha"
+            value={userCaptchaAnswer}
+            onChange={(e) => {
+              setUserCaptchaAnswer(e.target.value);
+              if (status === 'error') {
+                setStatus('idle');
+                setMessage('');
+              }
+            }}
+            required
+            className={`w-full px-4 py-3 bg-card border ${
+              status === 'error' && message.includes('Incorrect answer') ? 'border-red-500' : 'border-border'
+            } rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg`}
+            placeholder="Enter your answer"
+          />
         </div>
       )}
 
