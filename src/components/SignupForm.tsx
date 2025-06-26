@@ -148,6 +148,12 @@ export default function SignupForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (status === 'loading') {
+      return;
+    }
+    
     setStatus('loading');
     setMessage('');
 
@@ -222,6 +228,7 @@ export default function SignupForm() {
 
   const isFormValid = email && 
     !emailError &&
+    !isValidating &&
     (existingName || (fullName && fullName.trim().length > 0)) &&
     numberOfPeople &&
     !alreadySignedUp &&
@@ -453,7 +460,7 @@ export default function SignupForm() {
 
       <button
         type="submit"
-        disabled={status === 'loading' || !isFormValid || alreadySignedUp}
+        disabled={status === 'loading' || isValidating || !isFormValid || alreadySignedUp}
         className="w-full py-3 px-4 bg-primary text-white rounded-lg font-medium text-lg hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
       >
         {status === 'loading' 

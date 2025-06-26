@@ -116,7 +116,16 @@ export async function POST(request: Request) {
           .select()
           .single();
 
-        if (createSignupError) throw createSignupError;
+        if (createSignupError) {
+      // Check if it's a unique constraint violation (duplicate signup)
+      if (createSignupError.code === '23505') {
+        return NextResponse.json(
+          { error: 'You are already signed up for this date' },
+          { status: 400 }
+        );
+      }
+      throw createSignupError;
+    }
 
         // Send waitlist confirmation email
         try {
@@ -172,7 +181,16 @@ export async function POST(request: Request) {
       .select()
       .single();
 
-    if (createSignupError) throw createSignupError;
+    if (createSignupError) {
+      // Check if it's a unique constraint violation (duplicate signup)
+      if (createSignupError.code === '23505') {
+        return NextResponse.json(
+          { error: 'You are already signed up for this date' },
+          { status: 400 }
+        );
+      }
+      throw createSignupError;
+    }
 
     // Send confirmation email
     try {
