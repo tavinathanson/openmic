@@ -19,6 +19,21 @@ export default function Header() {
               <i>Crave Laughs</i> Open Mic
             </span>
           </div>
+          <a
+            href="https://www.instagram.com/tavinathanson"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pr-4 sm:pr-6 lg:pr-8 hover:opacity-80 transition-opacity flex items-center gap-2"
+          >
+            <Image
+              src="/instagram-logo.svg"
+              alt="Instagram"
+              width={24}
+              height={24}
+              className="w-6 h-6 text-purple-600"
+            />
+            <span className="text-purple-600 font-medium hidden sm:inline">@tavinathanson</span>
+          </a>
         </div>
       </div>
     </header>
