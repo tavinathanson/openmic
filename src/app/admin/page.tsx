@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 
 interface Comedian {
   id: string;
@@ -13,10 +12,6 @@ interface Comedian {
   created_at: string;
 }
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
@@ -25,7 +20,6 @@ export default function AdminPage() {
   const [walkInName, setWalkInName] = useState('');
   const [walkInEmail, setWalkInEmail] = useState('');
   const [activeDateId, setActiveDateId] = useState<string | null>(null);
-  const [selectedComics, setSelectedComics] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState(false);
@@ -42,18 +36,15 @@ export default function AdminPage() {
       
       if (!res.ok) {
         const data = await res.json();
-        console.error('Failed to load comedians:', data);
         setError(data.error || 'Failed to load comedians');
         return;
       }
       
       const data = await res.json();
-      console.log('Loaded comedians:', data);
       setComedians(data.comedians);
       setActiveDateId(data.activeDateId);
       setError(null);
-    } catch (err) {
-      console.error('Error loading comedians:', err);
+    } catch {
       setError('Failed to load comedians');
     }
   };
@@ -75,7 +66,6 @@ export default function AdminPage() {
   }, []);
 
   const checkIn = async (signUpId: string, status: string) => {
-    console.log('Checking in:', signUpId, status);
     setLoading(true);
     try {
       const res = await fetch('/api/admin/checkin', {
@@ -86,14 +76,11 @@ export default function AdminPage() {
       
       if (!res.ok) {
         const data = await res.json();
-        console.error('Check-in failed:', data);
         setError(data.error || 'Check-in failed');
       } else {
-        console.log('Check-in success');
         await loadComedians();
       }
-    } catch (err) {
-      console.error('Check-in error:', err);
+    } catch {
       setError('Check-in failed');
     }
     setLoading(false);
@@ -120,22 +107,19 @@ export default function AdminPage() {
       
       if (!res.ok) {
         const data = await res.json();
-        console.error('Walk-in failed:', data);
         setError(data.error || 'Failed to add walk-in');
       } else {
         setWalkInName('');
         setWalkInEmail('');
         await loadComedians();
       }
-    } catch (err) {
-      console.error('Walk-in error:', err);
+    } catch {
       setError('Failed to add walk-in');
     }
     setLoading(false);
   };
 
   const generateNext4 = async () => {
-    console.log('Generating lottery with activeDateId:', activeDateId);
     setLoading(true);
     try {
       const res = await fetch('/api/admin/lottery', {
@@ -146,16 +130,11 @@ export default function AdminPage() {
       
       if (!res.ok) {
         const data = await res.json();
-        console.error('Lottery failed:', data);
         setError(data.error || 'Lottery generation failed');
       } else {
-        const data = await res.json();
-        console.log('Lottery success:', data);
-        setSelectedComics(data.selectedIds);
         await loadComedians();
       }
-    } catch (err) {
-      console.error('Lottery error:', err);
+    } catch {
       setError('Lottery generation failed');
     }
     setLoading(false);

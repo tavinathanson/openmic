@@ -22,12 +22,9 @@ export async function POST(request: Request) {
       .neq('check_in_status', 'not_coming')
       .order('created_at', { ascending: true });
 
-    console.log('Available comedians for lottery:', comedians, 'Error:', error);
-    
     if (error) throw error;
     
     if (!comedians || comedians.length === 0) {
-      console.log('No comedians available for lottery');
       return NextResponse.json({ selectedIds: [] });
     }
 
@@ -96,7 +93,7 @@ export async function POST(request: Request) {
     await Promise.all(updates);
 
     return NextResponse.json({ selectedIds: selected });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to run lottery' },
       { status: 500 }

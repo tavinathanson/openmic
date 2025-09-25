@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     if (signupError) throw signupError;
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to add walk-in' },
       { status: 500 }

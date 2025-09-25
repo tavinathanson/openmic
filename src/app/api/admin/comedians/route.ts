@@ -10,8 +10,7 @@ export async function GET() {
     let activeDate;
     try {
       activeDate = await getActiveOpenMicDate(supabase);
-    } catch (err) {
-      console.error('No active open mic date found:', err);
+    } catch {
       return NextResponse.json({ 
         comedians: [],
         activeDateId: null,
@@ -43,8 +42,7 @@ export async function GET() {
       comedians: formattedComedians,
       activeDateId: activeDate.id
     });
-  } catch (error) {
-    console.error('Failed to fetch comedians:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch comedians' },
       { status: 500 }
