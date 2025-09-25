@@ -19,7 +19,8 @@
     "db:status": "NODE_ENV=development node --loader ts-node/esm scripts/db.ts status",
     "db:status:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts status",
     "db:import": "NODE_ENV=development node --loader ts-node/esm scripts/db.ts import",
-    "db:import:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts import"
+    "db:import:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts import",
+    "test:lottery": "tsx scripts/test-lottery.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.772.0",
@@ -53,6 +54,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
     "typescript": "^5",
     "vitest": "^3.2.4"
   }

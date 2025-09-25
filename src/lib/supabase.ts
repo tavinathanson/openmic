@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 export const createServerSupabaseClient = async () => {
@@ -31,6 +32,14 @@ export const createServerSupabaseClient = async () => {
   );
 };
 
+// Service role client for admin operations (bypasses RLS)
+export const createServiceRoleClient = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
+
 export type Person = {
   id: string;
   email: string;
@@ -47,6 +56,9 @@ export type SignUp = {
   signup_type: 'comedian' | 'audience';
   first_mic_ever?: boolean;
   will_support?: boolean;
+  check_in_status?: 'early' | 'on_time' | 'late' | 'not_coming' | null;
+  lottery_order?: number | null;
+  checked_in_at?: string | null;
 };
 
 export type OpenMicDate = {
