@@ -213,7 +213,7 @@ export default function AdminPage() {
           🎲 Generate Next {Math.min(4, eligibleComedians.length)} Comics
         </button>
 
-        {selectedComedians.length > 0 && (
+{(selectedComedians.length > 0 || eligibleComedians.length > 0) && (
           <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-800">Current Order</h2>
@@ -229,31 +229,83 @@ export default function AdminPage() {
                 <div key={c.id} className="bg-green-100 text-green-800 rounded-md p-3 font-medium flex items-center justify-between">
                   <span>{c.lottery_order}. {c.full_name}</span>
                   {editingOrder && (
-                    <input
-                      type="number"
-                      min="1"
-                      max={selectedComedians.length}
-                      value={c.lottery_order || ''}
-                      onChange={async (e) => {
-                        const newOrder = parseInt(e.target.value);
-                        if (newOrder && newOrder !== c.lottery_order) {
-                          await fetch('/api/admin/reorder', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                              comedianId: c.id,
-                              newOrder,
-                              password: 'tavi'
-                            })
-                          });
-                          await loadComedians();
-                        }
-                      }}
-                      className="w-16 px-2 py-1 border rounded text-center"
-                    />
+                    <div className="flex gap-1">
+                      <button
+                        onClick={async () => {
+                          const newOrder = (c.lottery_order || 1) - 1;
+                          if (newOrder >= 1) {
+                            await fetch('/api/admin/reorder', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                comedianId: c.id,
+                                newOrder,
+                                password: 'tavi'
+                              })
+                            });
+                            await loadComedians();
+                          }
+                        }}
+                        disabled={c.lottery_order === 1}
+                        className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const newOrder = (c.lottery_order || 1) + 1;
+                          if (newOrder <= selectedComedians.length) {
+                            await fetch('/api/admin/reorder', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                comedianId: c.id,
+                                newOrder,
+                                password: 'tavi'
+                              })
+                            });
+                            await loadComedians();
+                          }
+                        }}
+                        disabled={c.lottery_order === selectedComedians.length}
+                        className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        ↓
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
+              {eligibleComedians.length > 0 && (
+                <>
+                  {selectedComedians.length > 0 && <div className="border-t border-gray-300 my-3" />}
+                  {eligibleComedians.map((c) => (
+                    <div key={c.id} className="bg-gray-100 text-gray-600 rounded-md p-3 font-medium flex items-center justify-between">
+                      <span>{c.full_name}</span>
+                      {editingOrder && (
+                        <button
+                          onClick={async () => {
+                            const newOrder = selectedComedians.length + 1;
+                            await fetch('/api/admin/reorder', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                comedianId: c.id,
+                                newOrder,
+                                password: 'tavi'
+                              })
+                            });
+                            await loadComedians();
+                          }}
+                          className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
+                        >
+                          ↑
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           </div>
         )}
