@@ -20,10 +20,6 @@ export async function POST(request: Request) {
 
     if (fetchError) throw fetchError;
 
-    // Find the comedian being moved and their current position
-    const comedian = orderedComedians?.find(c => c.id === comedianId);
-    const currentOrder = comedian?.lottery_order;
-
     // Remove the comedian from the array if they exist
     const others = orderedComedians?.filter(c => c.id !== comedianId) || [];
 
