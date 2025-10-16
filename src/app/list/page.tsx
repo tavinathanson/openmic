@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface Comedian {
   id: string;
@@ -54,6 +55,16 @@ export default function ListPage() {
     <main className="min-h-screen py-20 px-4 sm:px-6 lg:px-8 bg-sky-50/50">
       <div className="max-w-2xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold text-center text-gray-800">Open Mic List</h1>
+
+        <div className="bg-card rounded-xl p-6 shadow-sm border border-border flex flex-col items-center">
+          <h2 className="text-lg font-semibold mb-3 text-gray-800">Scan to View on Your Phone</h2>
+          <QRCodeSVG
+            value="https://openmic.tavicomedy.com/list"
+            size={200}
+            level="H"
+            includeMargin={true}
+          />
+        </div>
 
         {selectedComedians.length > 0 && (
           <div className="bg-card rounded-xl p-6 shadow-sm border border-border">

@@ -35,7 +35,9 @@ export async function GET() {
       full_name: c.people?.full_name || 'No name',
       check_in_status: c.check_in_status,
       lottery_order: c.lottery_order,
-      created_at: c.created_at
+      created_at: c.created_at,
+      first_mic_ever: c.first_mic_ever,
+      plus_one: c.plus_one || false
     })) || [];
 
     return NextResponse.json({ 

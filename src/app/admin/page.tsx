@@ -10,6 +10,8 @@ interface Comedian {
   check_in_status: string | null;
   lottery_order: number | null;
   created_at: string;
+  first_mic_ever: boolean;
+  plus_one: boolean;
 }
 
 
@@ -64,6 +66,31 @@ export default function AdminPage() {
       setIsAuthed(true);
     }
   }, []);
+
+  const togglePlusOne = async (comedianId: string, currentValue: boolean) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/plusone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          signUpId: comedianId,
+          plusOne: !currentValue,
+          password: 'tavi'
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Failed to update plus one');
+      } else {
+        await loadComedians();
+      }
+    } catch {
+      setError('Failed to update plus one');
+    }
+    setLoading(false);
+  };
 
   const checkIn = async (signUpId: string, status: string) => {
     setLoading(true);
@@ -153,7 +180,7 @@ export default function AdminPage() {
               placeholder="Password"
               className="w-full px-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary mb-4"
             />
-            <button type="submit" className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+            <button type="submit" className="w-full bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
               Login
             </button>
           </form>
@@ -199,7 +226,7 @@ export default function AdminPage() {
               className="w-full px-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               disabled={loading}
             />
-            <button type="submit" className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50" disabled={loading}>
+            <button type="submit" className="w-full bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50" disabled={loading}>
               Add Walk-in
             </button>
           </form>
@@ -227,7 +254,11 @@ export default function AdminPage() {
             <div className="space-y-2">
               {selectedComedians.map((c) => (
                 <div key={c.id} className="bg-green-100 text-green-800 rounded-md p-3 font-medium flex items-center justify-between">
-                  <span>{c.lottery_order}. {c.full_name}</span>
+                  <span>
+                    {c.lottery_order}. {c.full_name}
+                    {c.first_mic_ever && <span className="ml-1">🍪</span>}
+                    {c.plus_one && <span className="ml-1">⊕</span>}
+                  </span>
                   {editingOrder && (
                     <div className="flex gap-1">
                       <button
@@ -281,7 +312,11 @@ export default function AdminPage() {
                   {selectedComedians.length > 0 && <div className="border-t border-gray-300 my-3" />}
                   {eligibleComedians.map((c) => (
                     <div key={c.id} className="bg-gray-100 text-gray-600 rounded-md p-3 font-medium flex items-center justify-between">
-                      <span>{c.full_name}</span>
+                      <span>
+                        {c.full_name}
+                        {c.first_mic_ever && <span className="ml-1">🍪</span>}
+                        {c.plus_one && <span className="ml-1">⊕</span>}
+                      </span>
                       {editingOrder && (
                         <button
                           onClick={async () => {
@@ -316,7 +351,11 @@ export default function AdminPage() {
             {comedians.map((comedian) => (
               <div key={comedian.id} className="bg-muted/30 rounded-lg p-4">
                 <div className="mb-3">
-                  <div className="font-semibold text-gray-800">{comedian.full_name}</div>
+                  <div className="font-semibold text-gray-800">
+                    {comedian.full_name}
+                    {comedian.first_mic_ever && <span className="ml-1">🍪</span>}
+                    {comedian.plus_one && <span className="ml-1">⊕</span>}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {comedian.check_in_status ? (
                       <span className={`font-medium ${
@@ -332,6 +371,15 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <button
+                    onClick={() => togglePlusOne(comedian.id, comedian.plus_one)}
+                    className={`${comedian.plus_one ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-500 hover:bg-gray-600'} text-white px-3 py-1.5 rounded-md text-sm transition-colors disabled:opacity-50`}
+                    disabled={loading}
+                  >
+                    {comedian.plus_one ? '+1' : 'Solo'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
                   <button
                     onClick={() => checkIn(comedian.id, 'early')}
                     className="bg-green-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
