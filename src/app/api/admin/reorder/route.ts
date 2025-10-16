@@ -20,6 +20,29 @@ export async function POST(request: Request) {
 
     if (fetchError) throw fetchError;
 
+    // If newOrder is null, remove comedian from order entirely
+    if (newOrder === null) {
+      // Remove the comedian from the array
+      const others = orderedComedians?.filter(c => c.id !== comedianId) || [];
+
+      // First clear the lottery_order for the removed comedian
+      await supabase
+        .from('sign_ups')
+        .update({ lottery_order: null })
+        .eq('id', comedianId);
+
+      // Then renumber the remaining comedians
+      const updates = others.map((c, index) =>
+        supabase
+          .from('sign_ups')
+          .update({ lottery_order: index + 1 })
+          .eq('id', c.id)
+      );
+
+      await Promise.all(updates);
+      return NextResponse.json({ success: true });
+    }
+
     // Remove the comedian from the array if they exist
     const others = orderedComedians?.filter(c => c.id !== comedianId) || [];
 

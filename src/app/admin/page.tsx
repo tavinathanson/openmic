@@ -303,6 +303,23 @@ export default function AdminPage() {
                       >
                         ↓
                       </button>
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/admin/reorder', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              comedianId: c.id,
+                              newOrder: null,
+                              password: 'tavi'
+                            })
+                          });
+                          await loadComedians();
+                        }}
+                        className="w-8 h-8 flex items-center justify-center bg-white border border-red-300 text-red-600 rounded hover:bg-red-50"
+                      >
+                        ✕
+                      </button>
                     </div>
                   )}
                 </div>
