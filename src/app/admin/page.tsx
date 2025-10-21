@@ -243,10 +243,16 @@ export default function AdminPage() {
 {(selectedComedians.length > 0 || eligibleComedians.length > 0) && (
           <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Current Order</h2>
+              <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                Current Order
+                {loading && (
+                  <span className="text-sm text-gray-500 animate-pulse">Updating...</span>
+                )}
+              </h2>
               <button
                 onClick={() => setEditingOrder(!editingOrder)}
                 className="text-sm text-blue-600 hover:text-blue-700"
+                disabled={loading}
               >
                 {editingOrder ? 'Done' : 'Edit Order'}
               </button>
@@ -265,6 +271,7 @@ export default function AdminPage() {
                         onClick={async () => {
                           const newOrder = (c.lottery_order || 1) - 1;
                           if (newOrder >= 1) {
+                            setLoading(true);
                             await fetch('/api/admin/reorder', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
@@ -275,9 +282,10 @@ export default function AdminPage() {
                               })
                             });
                             await loadComedians();
+                            setLoading(false);
                           }
                         }}
-                        disabled={c.lottery_order === 1}
+                        disabled={c.lottery_order === 1 || loading}
                         className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         ↑
@@ -285,6 +293,7 @@ export default function AdminPage() {
                       <button
                         onClick={async () => {
                           const newOrder = (c.lottery_order || 1) + 1;
+                          setLoading(true);
                           await fetch('/api/admin/reorder', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -295,14 +304,16 @@ export default function AdminPage() {
                             })
                           });
                           await loadComedians();
+                          setLoading(false);
                         }}
-                        disabled={c.lottery_order === selectedComedians.length}
+                        disabled={c.lottery_order === selectedComedians.length || loading}
                         className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         ↓
                       </button>
                       <button
                         onClick={async () => {
+                          setLoading(true);
                           await fetch('/api/admin/reorder', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -313,8 +324,10 @@ export default function AdminPage() {
                             })
                           });
                           await loadComedians();
+                          setLoading(false);
                         }}
-                        className="w-8 h-8 flex items-center justify-center bg-white border border-red-300 text-red-600 rounded hover:bg-red-50"
+                        disabled={loading}
+                        className="w-8 h-8 flex items-center justify-center bg-white border border-red-300 text-red-600 rounded hover:bg-red-50 disabled:opacity-30"
                       >
                         ✕
                       </button>
@@ -337,6 +350,7 @@ export default function AdminPage() {
                           <button
                             onClick={async () => {
                               const newOrder = selectedComedians.length + 1;
+                              setLoading(true);
                               await fetch('/api/admin/reorder', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -347,8 +361,10 @@ export default function AdminPage() {
                                 })
                               });
                               await loadComedians();
+                              setLoading(false);
                             }}
-                            className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
+                            disabled={loading}
+                            className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-30"
                           >
                             ↑
                           </button>
@@ -356,7 +372,8 @@ export default function AdminPage() {
                             onClick={async () => {
                               await checkIn(c.id, 'not_coming');
                             }}
-                            className="w-8 h-8 flex items-center justify-center bg-white border border-red-300 text-red-600 rounded hover:bg-red-50"
+                            disabled={loading}
+                            className="w-8 h-8 flex items-center justify-center bg-white border border-red-300 text-red-600 rounded hover:bg-red-50 disabled:opacity-30"
                             title="Mark as not coming"
                           >
                             ✕

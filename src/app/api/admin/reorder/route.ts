@@ -11,15 +11,6 @@ export async function POST(request: Request) {
 
     const supabase = createServiceRoleClient();
 
-    // Get all ordered comedians
-    const { data: orderedComedians, error: fetchError } = await supabase
-      .from('sign_ups')
-      .select('id, lottery_order')
-      .not('lottery_order', 'is', null)
-      .order('lottery_order');
-
-    if (fetchError) throw fetchError;
-
     // If newOrder is null, remove comedian from order entirely
     if (newOrder === null) {
       // First clear the lottery_order for the removed comedian
@@ -28,11 +19,15 @@ export async function POST(request: Request) {
         .update({ lottery_order: null })
         .eq('id', comedianId);
 
-      // Remove the comedian from the array
-      const others = orderedComedians?.filter(c => c.id !== comedianId) || [];
+      // Get ALL remaining ordered comedians and renumber them
+      const { data: remaining } = await supabase
+        .from('sign_ups')
+        .select('id')
+        .not('lottery_order', 'is', null)
+        .order('lottery_order');
 
-      // Then renumber the remaining comedians sequentially
-      const updates = others.map((c, index) =>
+      // Renumber everyone sequentially
+      const updates = (remaining || []).map((c, index) =>
         supabase
           .from('sign_ups')
           .update({ lottery_order: index + 1 })
@@ -43,19 +38,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // Build new array with correct order
-    const others = orderedComedians?.filter(c => c.id !== comedianId) || [];
+    // For reordering: Get ALL ordered comedians (sorted by current order)
+    const { data: orderedComedians } = await supabase
+      .from('sign_ups')
+      .select('id, lottery_order')
+      .not('lottery_order', 'is', null)
+      .order('lottery_order');
+
+    // Build array of IDs in current order
+    const orderedIds = (orderedComedians || []).map(c => c.id);
+
+    // Remove the comedian we're moving
+    const filteredIds = orderedIds.filter(id => id !== comedianId);
 
     // Insert at new position (newOrder - 1 because array is 0-indexed)
-    others.splice(newOrder - 1, 0, { id: comedianId, lottery_order: 0 });
+    filteredIds.splice(newOrder - 1, 0, comedianId);
 
-    // Update EVERYONE in the new order, forcing sequential numbering
-    for (let i = 0; i < others.length; i++) {
-      await supabase
+    // Update EVERYONE with their new sequential position
+    const updates = filteredIds.map((id, index) =>
+      supabase
         .from('sign_ups')
-        .update({ lottery_order: i + 1 })
-        .eq('id', others[i].id);
-    }
+        .update({ lottery_order: index + 1 })
+        .eq('id', id)
+    );
+
+    await Promise.all(updates);
 
     return NextResponse.json({ success: true });
   } catch {
