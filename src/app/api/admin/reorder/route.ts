@@ -43,21 +43,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // Remove the comedian from the current order if they exist
+    // Build new array with correct order
     const others = orderedComedians?.filter(c => c.id !== comedianId) || [];
 
     // Insert at new position (newOrder - 1 because array is 0-indexed)
-    others.splice(newOrder - 1, 0, { id: comedianId, lottery_order: newOrder });
+    others.splice(newOrder - 1, 0, { id: comedianId, lottery_order: 0 });
 
-    // Renumber EVERYONE sequentially starting from 1
-    const updates = others.map((c, index) =>
-      supabase
+    // Update EVERYONE in the new order, forcing sequential numbering
+    for (let i = 0; i < others.length; i++) {
+      await supabase
         .from('sign_ups')
-        .update({ lottery_order: index + 1 })
-        .eq('id', c.id)
-    );
-
-    await Promise.all(updates);
+        .update({ lottery_order: i + 1 })
+        .eq('id', others[i].id);
+    }
 
     return NextResponse.json({ success: true });
   } catch {
