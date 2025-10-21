@@ -3,7 +3,7 @@ import { createServiceRoleClient } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
-    const { comedianId, newOrder, password } = await request.json();
+    const { comedianId, newOrder, password, activeDateId } = await request.json();
 
     if (password !== 'tavi') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -19,10 +19,11 @@ export async function POST(request: Request) {
         .update({ lottery_order: null })
         .eq('id', comedianId);
 
-      // Get ALL remaining ordered comedians and renumber them
+      // Get ALL remaining ordered comedians for this date and renumber them
       const { data: remaining } = await supabase
         .from('sign_ups')
         .select('id')
+        .eq('open_mic_date_id', activeDateId)
         .not('lottery_order', 'is', null)
         .order('lottery_order');
 
@@ -38,10 +39,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // For reordering: Get ALL ordered comedians (sorted by current order)
+    // For reordering: Get ALL ordered comedians for this date (sorted by current order)
     const { data: orderedComedians } = await supabase
       .from('sign_ups')
       .select('id, lottery_order')
+      .eq('open_mic_date_id', activeDateId)
       .not('lottery_order', 'is', null)
       .order('lottery_order');
 
