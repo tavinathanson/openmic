@@ -149,7 +149,7 @@ async function syncComedianEmails() {
   // Get all comedian signups for yesterday's open mic
   const { data: signups, error: signupError } = await supabase
     .from('sign_ups')
-    .select('people(email, full_name)')
+    .select('*, people!inner(email, full_name)')
     .eq('signup_type', 'comedian')
     .eq('open_mic_date_id', openMicDate.id)
     .order('created_at', { ascending: true });
@@ -162,9 +162,11 @@ async function syncComedianEmails() {
   // Filter for new emails only
   const newEmails = [];
   for (const signup of signups || []) {
-    const email = signup.people?.email;
+    // Type assertion to handle the join result
+    const person = signup.people as any;
+    const email = person?.email;
     if (email && !existingEmails.has(email.toLowerCase().trim())) {
-      newEmails.push([email, signup.people?.full_name || '']);
+      newEmails.push([email, person?.full_name || '']);
     }
   }
   
