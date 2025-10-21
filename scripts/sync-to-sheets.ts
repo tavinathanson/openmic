@@ -1,14 +1,15 @@
 import { google } from 'googleapis';
 import { createServiceRoleClient } from '../src/lib/supabase';
 import { format, subDays } from 'date-fns';
-import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 
 const MAIN_SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const GOOGLE_SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
 
 if (!MAIN_SHEET_ID || !GOOGLE_SERVICE_ACCOUNT_KEY) {
-  console.error('Missing required environment variables: GOOGLE_SHEET_ID or GOOGLE_SERVICE_ACCOUNT_KEY');
-  process.exit(1);
+  console.log('Google Sheets sync is not configured. Skipping...');
+  console.log('To enable, set GOOGLE_SHEET_ID and GOOGLE_SERVICE_ACCOUNT_KEY environment variables.');
+  process.exit(0); // Exit successfully, just skip the sync
 }
 
 // Parse the service account key
@@ -121,7 +122,7 @@ async function syncComedianEmails() {
   
   // Get yesterday's date in EST/EDT (where the open mics happen)
   // This ensures we check the right date regardless of where the server runs
-  const nowInEastern = utcToZonedTime(new Date(), 'America/New_York');
+  const nowInEastern = toZonedTime(new Date(), 'America/New_York');
   const yesterdayInEastern = subDays(nowInEastern, 1);
   const yesterdayStr = format(yesterdayInEastern, 'yyyy-MM-dd');
   
