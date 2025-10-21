@@ -20,7 +20,8 @@
     "db:status:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts status",
     "db:import": "NODE_ENV=development node --loader ts-node/esm scripts/db.ts import",
     "db:import:prod": "NODE_ENV=production node --loader ts-node/esm scripts/db.ts import",
-    "test:lottery": "tsx scripts/test-lottery.ts"
+    "test:lottery": "tsx scripts/test-lottery.ts",
+    "sync:comedians": "tsx scripts/sync-to-sheets.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.772.0",

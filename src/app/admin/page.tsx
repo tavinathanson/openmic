@@ -285,18 +285,16 @@ export default function AdminPage() {
                       <button
                         onClick={async () => {
                           const newOrder = (c.lottery_order || 1) + 1;
-                          if (newOrder <= selectedComedians.length) {
-                            await fetch('/api/admin/reorder', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                comedianId: c.id,
-                                newOrder,
-                                password: 'tavi'
-                              })
-                            });
-                            await loadComedians();
-                          }
+                          await fetch('/api/admin/reorder', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              comedianId: c.id,
+                              newOrder,
+                              password: 'tavi'
+                            })
+                          });
+                          await loadComedians();
                         }}
                         disabled={c.lottery_order === selectedComedians.length}
                         className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -335,24 +333,35 @@ export default function AdminPage() {
                         {c.plus_one && <span className="ml-1">⊕</span>}
                       </span>
                       {editingOrder && (
-                        <button
-                          onClick={async () => {
-                            const newOrder = selectedComedians.length + 1;
-                            await fetch('/api/admin/reorder', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                comedianId: c.id,
-                                newOrder,
-                                password: 'tavi'
-                              })
-                            });
-                            await loadComedians();
-                          }}
-                          className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
-                        >
-                          ↑
-                        </button>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={async () => {
+                              const newOrder = selectedComedians.length + 1;
+                              await fetch('/api/admin/reorder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  comedianId: c.id,
+                                  newOrder,
+                                  password: 'tavi'
+                                })
+                              });
+                              await loadComedians();
+                            }}
+                            className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            onClick={async () => {
+                              await checkIn(c.id, 'not_coming');
+                            }}
+                            className="w-8 h-8 flex items-center justify-center bg-white border border-red-300 text-red-600 rounded hover:bg-red-50"
+                            title="Mark as not coming"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -365,13 +374,34 @@ export default function AdminPage() {
         <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
           <h2 className="text-xl font-semibold mb-4 text-gray-800">All Comedians</h2>
           <div className="space-y-3">
-            {comedians.map((comedian) => (
+            {comedians
+              .sort((a, b) => {
+                // Sort by check-in status: unchecked first, then by status type
+                if (!a.check_in_status && !b.check_in_status) return 0;
+                if (!a.check_in_status) return -1;
+                if (!b.check_in_status) return 1;
+
+                // Among checked-in: early, on_time, late, not_coming
+                const statusOrder = { early: 1, on_time: 2, late: 3, not_coming: 4 };
+                return (statusOrder[a.check_in_status as keyof typeof statusOrder] || 5) -
+                       (statusOrder[b.check_in_status as keyof typeof statusOrder] || 5);
+              })
+              .map((comedian) => (
               <div key={comedian.id} className="bg-muted/30 rounded-lg p-4">
                 <div className="mb-3">
-                  <div className="font-semibold text-gray-800">
-                    {comedian.full_name}
-                    {comedian.first_mic_ever && <span className="ml-1">🍪</span>}
-                    {comedian.plus_one && <span className="ml-1">⊕</span>}
+                  <div className="font-semibold text-gray-800 flex items-center gap-2">
+                    <span className={`w-3 h-3 rounded-full ${
+                      !comedian.check_in_status ? 'bg-gray-400' :
+                      comedian.check_in_status === 'early' ? 'bg-green-500' :
+                      comedian.check_in_status === 'on_time' ? 'bg-blue-500' :
+                      comedian.check_in_status === 'late' ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`} />
+                    <span>
+                      {comedian.full_name}
+                      {comedian.first_mic_ever && <span className="ml-1">🍪</span>}
+                      {comedian.plus_one && <span className="ml-1">⊕</span>}
+                    </span>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {comedian.check_in_status ? (

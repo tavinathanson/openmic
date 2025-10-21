@@ -38,6 +38,10 @@ RESEND_API_KEY=your_resend_api_key
 # Application Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3003
 NEXT_PUBLIC_MAX_COMEDIAN_SLOTS=20
+
+# Google Sheets Sync (optional)
+GOOGLE_SERVICE_ACCOUNT_KEY='{ "your": "service account json" }'
+GOOGLE_SHEET_ID=your_google_sheet_id
 ```
 
 3. Run the development server:
@@ -78,6 +82,74 @@ The application handles email case sensitivity gracefully to ensure a consistent
 
 The application properly handles timezone differences for date formatting in emails. Email confirmations display "tonight", "tomorrow", or specific dates based on the event's timezone rather than the server's timezone, ensuring users see accurate relative dates regardless of where the server is hosted.
 
+## Google Sheets Integration
+
+The application can track new comedian emails by creating date-specific Google Sheets after each open mic. This allows you to review new comedians and manually add them to your main email list.
+
+### Setting Up Google Sheets Sync
+
+1. **Create a Google Cloud service account:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Enable the Google Sheets API:
+     - Go to "APIs & Services" → "Library"
+     - Search for "Google Sheets API" and click on it
+     - Click "Enable"
+   - Create a service account:
+     - Go to "APIs & Services" → "Credentials"
+     - Click "Create Credentials" → "Service account"
+     - Give it a name (e.g., "openmic-sheets-sync")
+     - Click "Create and Continue"
+     - Skip the optional permissions step (click "Continue")
+     - Skip the optional user access step (click "Done")
+   - Create a key for the service account:
+     - Click on your new service account
+     - Go to the "Keys" tab
+     - Click "Add Key" → "Create new key"
+     - Choose "JSON" format
+     - Download the JSON file (keep this secure!)
+
+2. **Create and configure your Google Sheet:**
+   - Create a new Google Sheet
+   - Add "Email" as a column header in row 1 (the script will look for this column)
+   - Get the Sheet ID from the URL: `https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit`
+   - Share the sheet with your service account:
+     - Click "Share" button
+     - Paste the service account email (found in the JSON file as `client_email`)
+     - Give it "Editor" permission
+     - Click "Send"
+
+3. **Set environment variables:**
+   - Add to your `.env.local`:
+     ```
+     GOOGLE_SERVICE_ACCOUNT_KEY='{ paste contents of downloaded JSON file here }'
+     GOOGLE_SHEET_ID=your_sheet_id_here
+     ```
+   - **Important:** The JSON must be on a single line. You can use a tool like `jq -c . < key.json` to compact it.
+   
+   - For GitHub Actions, add these as repository secrets:
+     - Go to Settings → Secrets and variables → Actions
+     - Add `GOOGLE_SERVICE_ACCOUNT_KEY` (paste the entire JSON content)
+     - Add `GOOGLE_SHEET_ID`
+
+4. **Manual sync:**
+   ```bash
+   npm run sync:comedians
+   ```
+
+5. **Automatic daily check:**
+   - The GitHub Actions workflow runs daily at 1pm UTC (8am EST / 9am EDT)
+   - It checks if there was an open mic yesterday (based on Eastern Time)
+   - If yes, it creates a new sheet with any new comedian emails
+   - You can also trigger it manually from the GitHub Actions tab
+
+The sync process:
+- Runs automatically the day after each open mic (or can be triggered manually)
+- Checks your main Google Sheet for existing emails
+- Finds any new comedian emails from last night's open mic
+- Creates a new Google Sheet named "New Comedians - [date]" with only the new emails
+- You can then manually review and add these to your main sheet as needed
+
 ## Deployment
 
 The app is optimized for Vercel deployment. Just push to GitHub and import your repo in Vercel. Make sure to add all your environment variables in the Vercel project settings.
@@ -91,6 +163,7 @@ The app is optimized for Vercel deployment. Just push to GitHub and import your 
 - `npm run db:import:prod` - Import people data to production
 - `npm run db:reset` - Reset development database
 - `npm run db:reset:prod` - Reset production database
+- `npm run sync:comedians` - Manually check for new comedians and create review sheet
 
 ## License
 

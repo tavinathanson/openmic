@@ -22,16 +22,16 @@ export async function POST(request: Request) {
 
     // If newOrder is null, remove comedian from order entirely
     if (newOrder === null) {
-      // Remove the comedian from the array
-      const others = orderedComedians?.filter(c => c.id !== comedianId) || [];
-
       // First clear the lottery_order for the removed comedian
       await supabase
         .from('sign_ups')
         .update({ lottery_order: null })
         .eq('id', comedianId);
 
-      // Then renumber the remaining comedians
+      // Remove the comedian from the array
+      const others = orderedComedians?.filter(c => c.id !== comedianId) || [];
+
+      // Then renumber the remaining comedians sequentially
       const updates = others.map((c, index) =>
         supabase
           .from('sign_ups')
@@ -43,13 +43,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // Remove the comedian from the array if they exist
+    // Remove the comedian from the current order if they exist
     const others = orderedComedians?.filter(c => c.id !== comedianId) || [];
 
     // Insert at new position (newOrder - 1 because array is 0-indexed)
     others.splice(newOrder - 1, 0, { id: comedianId, lottery_order: newOrder });
 
-    // Renumber everyone sequentially
+    // Renumber EVERYONE sequentially starting from 1
     const updates = others.map((c, index) =>
       supabase
         .from('sign_ups')
