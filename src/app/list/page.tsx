@@ -66,9 +66,21 @@ export default function ListPage() {
           />
         </div>
 
-        {selectedComedians.length > 0 && (
-          <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
-            <h2 className="text-2xl font-bold mb-4 text-green-600">🎤 Currently Up</h2>
+        <div className="bg-yellow-100 border-2 border-yellow-400 rounded-t-xl p-3 text-center -mb-0.5">
+          <p className="text-lg font-bold text-yellow-900">✓ Find Tavi to check in!</p>
+        </div>
+        <div className="bg-purple-50 border-2 border-purple-300 rounded-b-xl p-4 text-center">
+          <p className="text-base text-purple-900 font-semibold">
+            ★ Sign up early & show up early to get bonus tickets in the drawing!
+          </p>
+        </div>
+
+        <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-green-600">🎤 Lineup Order</h2>
+            <span className="text-base text-gray-600 italic">Random drawing</span>
+          </div>
+          {selectedComedians.length > 0 ? (
             <div className="space-y-3">
               {selectedComedians.map((c) => (
                 <div key={c.id} className="text-lg bg-green-100 text-green-800 rounded-md p-4 font-semibold">
@@ -76,12 +88,32 @@ export default function ListPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="relative">
+              <div className="space-y-3 opacity-30">
+                {[1, 2, 3, 4].map((num) => (
+                  <div key={num} className="text-lg bg-green-100 text-green-800 rounded-md p-4 font-semibold">
+                    {num}.
+                  </div>
+                ))}
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-green-100 border-2 border-green-600 rounded-xl px-8 py-6 shadow-lg">
+                  <p className="text-2xl font-bold text-green-800 text-center">
+                    🎲 Random Drawing<br />Will Happen Soon!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {checkedIn.length > 0 && (
           <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
-            <h2 className="text-xl font-bold mb-4 text-blue-600">⏳ Waiting to Go Up</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-blue-600">⏳ Waiting to Go Up</h2>
+              <span className="text-base text-gray-600 italic">Not in order yet</span>
+            </div>
             <div className="space-y-2">
               {checkedIn.map((c) => (
                 <div key={c.id} className="p-3 bg-blue-50 rounded-md text-gray-800">
@@ -94,7 +126,10 @@ export default function ListPage() {
 
         {notCheckedIn.length > 0 && (
           <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
-            <h2 className="text-xl font-bold mb-4 text-muted-foreground">📋 Not Yet Checked In</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-muted-foreground">📋 Not Yet Checked In</h2>
+              <span className="text-base text-gray-600 italic">Not in order yet</span>
+            </div>
             <div className="space-y-2">
               {notCheckedIn.map((c) => (
                 <div key={c.id} className="p-3 bg-muted/30 rounded-md text-muted-foreground">

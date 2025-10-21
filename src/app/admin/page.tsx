@@ -301,7 +301,8 @@ export default function AdminPage() {
                             body: JSON.stringify({
                               comedianId: c.id,
                               newOrder,
-                              password: 'tavi'
+                              password: 'tavi',
+                              activeDateId
                             })
                           });
                           await loadComedians();
@@ -359,7 +360,8 @@ export default function AdminPage() {
                                 body: JSON.stringify({
                                   comedianId: c.id,
                                   newOrder,
-                                  password: 'tavi'
+                                  password: 'tavi',
+                                  activeDateId
                                 })
                               });
                               await loadComedians();
