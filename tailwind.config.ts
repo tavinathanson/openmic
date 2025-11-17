@@ -11,6 +11,10 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-plus-jakarta)', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
         heading: ['var(--font-poltawski-nowy)', 'ui-serif', 'Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
+        display: ['var(--font-bebas-neue)', 'sans-serif'],
+      },
+      colors: {
+        'comedy-dark': '#1F2937',
       },
     },
   },

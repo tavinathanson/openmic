@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Poltawski_Nowy } from "next/font/google";
+import { Plus_Jakarta_Sans, Poltawski_Nowy, Bebas_Neue } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import Header from "@/components/Header";
@@ -16,6 +16,13 @@ const poltawskiNowy = Poltawski_Nowy({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
   variable: "--font-poltawski-nowy",
+  display: "swap",
+});
+
+const bebasNeue = Bebas_Neue({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-bebas-neue",
   display: "swap",
 });
 
@@ -57,7 +64,7 @@ export default function RootLayout({
           />
         </noscript>
       </head>
-      <body className={`${plusJakarta.variable} ${poltawskiNowy.variable} font-sans antialiased`}>
+      <body className={`${plusJakarta.variable} ${poltawskiNowy.variable} ${bebasNeue.variable} font-sans antialiased`}>
         <Header />
         {children}
         <Footer />
