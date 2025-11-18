@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { FaInstagram } from 'react-icons/fa';
 
 export default function Header() {
   return (
@@ -34,13 +35,7 @@ export default function Header() {
               rel="noopener noreferrer"
               className="hover:opacity-80 transition-opacity flex items-center gap-2"
             >
-              <Image
-                src="/instagram-logo.svg"
-                alt="Instagram"
-                width={24}
-                height={24}
-                className="w-6 h-6 text-purple-600"
-              />
+              <FaInstagram className="w-5 h-5 text-purple-600 mt-0.5" />
               <span className="text-purple-600 font-medium hidden sm:inline">@tavinathanson</span>
             </a>
           </div>

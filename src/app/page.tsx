@@ -7,7 +7,7 @@ import PhotoGallery from '@/components/PhotoGallery';
 
 export default function Home() {
   return (
-    <main className="min-h-screen py-20 px-4 sm:px-6 lg:px-8 bg-sky-50/50">
+    <main className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-sky-50/50">
       <div className="max-w-2xl mx-auto">
         <div className="space-y-12">
           <div className="animate-fade-in-up">

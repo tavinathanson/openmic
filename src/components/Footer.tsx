@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { FaInstagram } from 'react-icons/fa';
 
 export default function Footer() {
   return (
@@ -12,7 +12,7 @@ export default function Footer() {
                 href="https://tavicomedy.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-display text-purple-600 hover:text-purple-800 transition-colors text-xl"
+                className="font-display text-purple-600 hover:text-purple-800 transition-colors text-2xl"
               >
                 TAVI COMEDY LAB
               </a>
@@ -36,13 +36,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="hover:opacity-80 transition-opacity flex items-center gap-2 text-purple-600"
             >
-              <Image
-                src="/instagram-logo.svg"
-                alt="Instagram"
-                width={24}
-                height={24}
-                className="w-5 h-5"
-              />
+              <FaInstagram className="w-5 h-5 mt-0.5" />
               <span className="font-medium">@tavinathanson</span>
             </a>
           </div>
