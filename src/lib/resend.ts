@@ -1,6 +1,5 @@
 import { Resend } from 'resend';
 import { format } from 'date-fns';
-import { formatInTimeZone } from 'date-fns-tz';
 import { getDateText } from './date-utils';
 
 if (!process.env.RESEND_API_KEY) {
@@ -52,11 +51,9 @@ async function sendEmail({
   // Format the date text using timezone-aware logic
   const dateText = getDateText(date, timezone);
 
-  // Format time in the specified timezone
+  // Format time from 24h to 12h (time is already in correct local timezone)
   const [hours, minutes] = time.split(':');
-  const timeString = `${format(date, 'yyyy-MM-dd')}T${hours}:${minutes}:00${timezone === 'America/New_York' ? '-04:00' : '+00:00'}`;
-  const timeObj = new Date(timeString);
-  const formattedTime = formatInTimeZone(timeObj, timezone, 'h:mm a');
+  const formattedTime = format(new Date(2000, 0, 1, parseInt(hours), parseInt(minutes)), 'h:mm a');
 
   let message: string;
   if (isWaitlist) {
