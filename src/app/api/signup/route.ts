@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { createClient } from '@supabase/supabase-js';
 import { signRlsJwt } from '@/lib/jwt';
-import { sendConfirmationEmail, sendWaitlistEmail } from '@/lib/resend';
+import { sendConfirmationEmail, sendWaitlistEmail, sendEmailErrorNotification } from '@/lib/resend';
 import { parseISO } from 'date-fns';
 import { getActiveOpenMicDate } from '@/lib/openMic';
 
@@ -157,6 +157,17 @@ export async function POST(request: Request) {
           );
         } catch (emailError) {
           console.error('Failed to send waitlist email:', emailError);
+          // Notify Tavi about the email failure
+          await sendEmailErrorNotification(
+            email,
+            'waitlist',
+            emailError,
+            {
+              fullName: full_name,
+              type: 'comedian',
+              date: activeDate.date
+            }
+          );
         }
 
         return NextResponse.json({ 
@@ -225,6 +236,17 @@ export async function POST(request: Request) {
       );
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
+      // Notify Tavi about the email failure
+      await sendEmailErrorNotification(
+        email,
+        'confirmation',
+        emailError,
+        {
+          fullName: full_name,
+          type,
+          date: activeDate.date
+        }
+      );
       // Log the error but don't throw - we still want to return success since the signup worked
       // The user can still attend even if they don't get the email
     }

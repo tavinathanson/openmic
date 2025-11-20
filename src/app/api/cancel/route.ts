@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { signRlsJwt } from '@/lib/jwt';
 import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
-import { sendCancellationNotification } from '@/lib/resend';
+import { sendCancellationNotification, sendEmailErrorNotification } from '@/lib/resend';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -28,25 +28,22 @@ export async function GET(request: Request) {
     let signupId: string;
     let personEmail: string | undefined;
     let personName: string | undefined;
+    let signupType: 'comedian' | 'audience' | undefined;
 
-    if (id && type) {
-      // If ID and type are provided, use them directly
-      if (type !== 'comedian' && type !== 'audience') {
-        return NextResponse.json(
-          { error: 'Invalid type parameter' },
-          { status: 400 }
-        );
-      }
+    if (id) {
+      // If ID is provided, use it directly
       signupId = id;
 
-      // Get person data for notification
+      // Get person data and signup type from database for notification
       const { data: signupData } = await supabase
         .from('sign_ups')
-        .select('person_id')
+        .select('person_id, signup_type')
         .eq('id', id)
         .single();
 
       if (signupData) {
+        signupType = signupData.signup_type;
+
         const { data: personData } = await supabase
           .from('people')
           .select('email, full_name')
@@ -104,6 +101,7 @@ export async function GET(request: Request) {
       }
 
       signupId = signupData.id;
+      signupType = signupData.signup_type;
     } else {
       return NextResponse.json(
         { error: 'Missing required parameters' },
@@ -137,15 +135,26 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     // Send cancellation notification to Tavi
-    if (personEmail && personName) {
+    if (personEmail && personName && signupType) {
       try {
         await sendCancellationNotification(
           personEmail,
           personName,
-          type as 'comedian' | 'audience'
+          signupType
         );
       } catch (emailError) {
         console.error('Failed to send cancellation notification:', emailError);
+        // Notify Tavi about the email failure
+        await sendEmailErrorNotification(
+          personEmail,
+          'cancellation',
+          emailError,
+          {
+            fullName: personName,
+            type: signupType,
+            date: activeDate.date
+          }
+        );
         // Don't throw - we still want to return success since the cancellation worked
       }
     }

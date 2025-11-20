@@ -129,3 +129,36 @@ export async function sendCancellationNotification(
     `,
   });
 }
+
+export async function sendEmailErrorNotification(
+  failedEmail: string,
+  errorType: 'confirmation' | 'waitlist' | 'cancellation',
+  error: any,
+  context?: {
+    fullName?: string;
+    type?: 'comedian' | 'audience';
+    date?: string;
+  }
+) {
+  try {
+    await resend.emails.send({
+      from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
+      to: EXTRA_NOTIFY_EMAIL,
+      subject: `Email Error: Failed to send ${errorType} email`,
+      html: `
+        <p><strong>Failed to send ${errorType} email</strong></p>
+        <ul>
+          <li><strong>Email:</strong> ${failedEmail}</li>
+          ${context?.fullName ? `<li><strong>Name:</strong> ${context.fullName}</li>` : ''}
+          ${context?.type ? `<li><strong>Type:</strong> ${context.type}</li>` : ''}
+          ${context?.date ? `<li><strong>Date:</strong> ${context.date}</li>` : ''}
+          <li><strong>Error:</strong> ${error?.message || JSON.stringify(error)}</li>
+        </ul>
+        <p>The signup was successful, but the user did not receive a confirmation email. You may want to contact them manually.</p>
+      `,
+    });
+  } catch (notificationError) {
+    // If we can't even send the error notification, just log it
+    console.error('Failed to send error notification:', notificationError);
+  }
+}
