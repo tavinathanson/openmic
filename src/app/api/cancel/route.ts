@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase';
 import { signRlsJwt } from '@/lib/jwt';
 import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
 import { sendCancellationNotification, sendEmailErrorNotification } from '@/lib/resend';
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
     let signupId: string;
     let personEmail: string | undefined;
-    let personName: string | undefined;
+    let personName: string | null | undefined;
     let signupType: 'comedian' | 'audience' | undefined;
 
     if (id) {
@@ -34,20 +34,30 @@ export async function GET(request: Request) {
       signupId = id;
 
       // Get person data and signup type from database for notification
-      const { data: signupData } = await supabase
+      // Use service role client to bypass RLS for admin notification purposes
+      const serviceClient = createServiceRoleClient();
+      const { data: signupData, error: signupFetchError } = await serviceClient
         .from('sign_ups')
         .select('person_id, signup_type')
         .eq('id', id)
         .single();
 
+      if (signupFetchError) {
+        console.error('Failed to fetch signup data for notification:', signupFetchError);
+      }
+
       if (signupData) {
         signupType = signupData.signup_type;
 
-        const { data: personData } = await supabase
+        const { data: personData, error: personFetchError } = await serviceClient
           .from('people')
           .select('email, full_name')
           .eq('id', signupData.person_id)
           .single();
+
+        if (personFetchError) {
+          console.error('Failed to fetch person data for notification:', personFetchError);
+        }
 
         if (personData) {
           personEmail = personData.email;
@@ -134,11 +144,11 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     // Send cancellation notification to Tavi
-    if (personEmail && personName && signupType) {
+    if (personEmail && signupType) {
       try {
         await sendCancellationNotification(
           personEmail,
-          personName,
+          personName || 'Unknown',
           signupType
         );
       } catch (emailError) {
@@ -149,7 +159,7 @@ export async function GET(request: Request) {
           'cancellation',
           emailError,
           {
-            fullName: personName,
+            fullName: personName || 'Unknown',
             type: signupType,
             date: activeDate.date
           }
