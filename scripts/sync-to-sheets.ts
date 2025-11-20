@@ -16,7 +16,7 @@ if (!MAIN_SHEET_ID || !GOOGLE_SERVICE_ACCOUNT_KEY) {
 let serviceAccountKey;
 try {
   serviceAccountKey = JSON.parse(GOOGLE_SERVICE_ACCOUNT_KEY);
-} catch (error) {
+} catch {
   console.error('Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY. Make sure it\'s valid JSON.');
   process.exit(1);
 }
@@ -28,7 +28,6 @@ const auth = new google.auth.GoogleAuth({
 });
 
 const sheets = google.sheets({ version: 'v4', auth });
-const drive = google.drive({ version: 'v3', auth });
 
 async function getExistingEmailsFromMainSheet(): Promise<Set<string>> {
   try {
@@ -65,8 +64,9 @@ async function getExistingEmailsFromMainSheet(): Promise<Set<string>> {
     }
     
     return existingEmails;
-  } catch (error: any) {
-    console.error('Error fetching existing emails from main sheet:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error fetching existing emails from main sheet:', message);
     return new Set();
   }
 }
@@ -109,8 +109,9 @@ async function createDateSheet(date: string, newEmails: string[][]): Promise<voi
     // Share the sheet with the same permissions as the main sheet
     // This ensures the user can access it
     console.log('Sheet created successfully!');
-  } catch (error: any) {
-    console.error('Error creating date sheet:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error creating date sheet:', message);
     throw error;
   }
 }
@@ -163,10 +164,12 @@ async function syncComedianEmails() {
   const newEmails = [];
   for (const signup of signups || []) {
     // Type assertion to handle the join result
-    const person = signup.people as any;
-    const email = person?.email;
+    const person = signup.people as { email: string; full_name: string | null } | { email: string; full_name: string | null }[];
+    // Handle both single object and array cases from Supabase join
+    const personData = Array.isArray(person) ? person[0] : person;
+    const email = personData?.email;
     if (email && !existingEmails.has(email.toLowerCase().trim())) {
-      newEmails.push([email, person?.full_name || '']);
+      newEmails.push([email, personData?.full_name || '']);
     }
   }
   

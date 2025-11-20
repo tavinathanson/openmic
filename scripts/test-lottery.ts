@@ -76,9 +76,9 @@ async function testLotteryAlgorithm() {
         tickets++;
         bonuses.push('early check-in');
       }
-      
-      const person = c.people as any;
-      console.log(`  - ${person?.full_name || 'Unknown'}: ${tickets} ticket(s)` + 
+
+      const person = Array.isArray(c.people) ? c.people[0] : c.people;
+      console.log(`  - ${person?.full_name || 'Unknown'}: ${tickets} ticket(s)` +
         (bonuses.length > 0 ? ` (${bonuses.join(', ')})` : ''));
     });
     
@@ -97,7 +97,7 @@ async function testLotteryAlgorithm() {
     if (invalidSelections.length > 0) {
       console.log(`❌ ERROR: ${invalidSelections.length} comedian(s) selected without check-in!`);
       invalidSelections.forEach(c => {
-        const person = c.people as any;
+        const person = Array.isArray(c.people) ? c.people[0] : c.people;
         console.log(`   - ${person?.full_name} (order: ${c.lottery_order})`);
       });
     } else {
@@ -132,7 +132,7 @@ async function testLotteryAlgorithm() {
     if (notComingWithOrder.length > 0) {
       console.log(`ℹ️  INFO: ${notComingWithOrder.length} comedian(s) marked 'not_coming' after selection (order preserved)`);
       notComingWithOrder.forEach(c => {
-        const person = c.people as any;
+        const person = Array.isArray(c.people) ? c.people[0] : c.people;
         console.log(`   - ${person?.full_name} (order: ${c.lottery_order}) - keeps their spot`);
       });
     } else {
@@ -148,7 +148,8 @@ async function testLotteryAlgorithm() {
       if (c.check_in_status === 'early') expectedTickets++;
       
       if (expectedTickets > 3) {
-        console.log(`❌ ERROR: ${(c.people as any)?.full_name} would have ${expectedTickets} tickets (max is 3)`);
+        const person = Array.isArray(c.people) ? c.people[0] : c.people;
+        console.log(`❌ ERROR: ${person?.full_name} would have ${expectedTickets} tickets (max is 3)`);
         ticketTestPassed = false;
       }
     });
