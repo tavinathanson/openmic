@@ -133,6 +133,7 @@ export async function sendCancellationNotification(
 export async function sendEmailErrorNotification(
   failedEmail: string,
   errorType: 'confirmation' | 'waitlist' | 'cancellation',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   error: any,
   context?: {
     fullName?: string;

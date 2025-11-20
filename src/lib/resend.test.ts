@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the Resend module
 const mockSend = vi.fn();
 vi.mock('resend', () => ({
   Resend: vi.fn(() => ({
     emails: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       send: (...args: any[]) => mockSend(...args)
     }
   }))
