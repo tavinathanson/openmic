@@ -9,6 +9,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const email = searchParams.get('email');
+  const note = searchParams.get('note');
 
   try {
     const supabase = await createServerSupabaseClient();
@@ -149,7 +150,8 @@ export async function GET(request: Request) {
         await sendCancellationNotification(
           personEmail,
           personName || 'Unknown',
-          signupType
+          signupType,
+          note || undefined
         );
       } catch (emailError) {
         console.error('Failed to send cancellation notification:', emailError);

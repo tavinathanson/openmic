@@ -113,7 +113,8 @@ export async function sendWaitlistEmail(
 export async function sendCancellationNotification(
   email: string,
   fullName: string,
-  type: 'comedian' | 'audience'
+  type: 'comedian' | 'audience',
+  note?: string
 ) {
   await resend.emails.send({
     from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
@@ -125,6 +126,7 @@ export async function sendCancellationNotification(
         <li>Name: ${fullName}</li>
         <li>Email: ${email}</li>
         <li>Type: ${type}</li>
+        ${note ? `<li>Reason: ${note}</li>` : ''}
       </ul>
     `,
   });

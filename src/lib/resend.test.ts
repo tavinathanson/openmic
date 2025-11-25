@@ -11,8 +11,8 @@ vi.mock('resend', () => ({
   }))
 }));
 
-// Now import the function to test
-import { sendEmailErrorNotification } from './resend';
+// Now import the functions to test
+import { sendEmailErrorNotification, sendCancellationNotification } from './resend';
 
 describe('sendEmailErrorNotification', () => {
   beforeEach(() => {
@@ -104,5 +104,66 @@ describe('sendEmailErrorNotification', () => {
     const callArg = mockSend.mock.calls[0][0];
     expect(callArg.html).toContain('INVALID_EMAIL');
     expect(callArg.html).toContain('Malformed address');
+  });
+});
+
+describe('sendCancellationNotification', () => {
+  beforeEach(() => {
+    mockSend.mockClear();
+    mockSend.mockResolvedValue({ data: { id: 'test-email-id' } });
+  });
+
+  it('sends cancellation notification without note', async () => {
+    await sendCancellationNotification(
+      'comedian@example.com',
+      'John Doe',
+      'comedian'
+    );
+
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const callArg = mockSend.mock.calls[0][0];
+
+    expect(callArg.subject).toBe('Open Mic Cancellation: John Doe');
+    expect(callArg.html).toContain('John Doe');
+    expect(callArg.html).toContain('comedian@example.com');
+    expect(callArg.html).toContain('comedian');
+    expect(callArg.html).not.toContain('Reason:');
+  });
+
+  it('sends cancellation notification with note', async () => {
+    await sendCancellationNotification(
+      'comedian@example.com',
+      'John Doe',
+      'comedian',
+      'Schedule conflict - have to work late'
+    );
+
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const callArg = mockSend.mock.calls[0][0];
+
+    expect(callArg.subject).toBe('Open Mic Cancellation: John Doe');
+    expect(callArg.html).toContain('John Doe');
+    expect(callArg.html).toContain('comedian@example.com');
+    expect(callArg.html).toContain('comedian');
+    expect(callArg.html).toContain('Reason:');
+    expect(callArg.html).toContain('Schedule conflict - have to work late');
+  });
+
+  it('sends cancellation notification for audience member', async () => {
+    await sendCancellationNotification(
+      'audience@example.com',
+      'Jane Smith',
+      'audience',
+      'Found other plans'
+    );
+
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const callArg = mockSend.mock.calls[0][0];
+
+    expect(callArg.subject).toBe('Open Mic Cancellation: Jane Smith');
+    expect(callArg.html).toContain('Jane Smith');
+    expect(callArg.html).toContain('audience@example.com');
+    expect(callArg.html).toContain('audience');
+    expect(callArg.html).toContain('Found other plans');
   });
 });
