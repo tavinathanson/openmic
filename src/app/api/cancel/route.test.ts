@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET } from './route';
-import { NextResponse } from 'next/server';
 
 // Mock all dependencies
 vi.mock('@/lib/supabase', () => ({
@@ -31,6 +30,11 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
 import { sendCancellationNotification } from '@/lib/resend';
 
+// Type definitions for mocks
+type MockSupabaseClient = {
+  from: ReturnType<typeof vi.fn>;
+};
+
 describe('Cancel API Route', () => {
   const mockActiveDate = { id: 'date-123', date: '2025-11-25' };
   const mockSignup = {
@@ -48,7 +52,7 @@ describe('Cancel API Route', () => {
     vi.clearAllMocks();
 
     // Setup default mock implementations
-    vi.mocked(createServerSupabaseClient).mockResolvedValue({} as any);
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({} as MockSupabaseClient);
     vi.mocked(getActiveOpenMicDate).mockResolvedValue(mockActiveDate);
     vi.mocked(sendCancellationNotification).mockResolvedValue(undefined);
   });
@@ -79,7 +83,7 @@ describe('Cancel API Route', () => {
         })
       };
 
-      vi.mocked(createServiceRoleClient).mockReturnValue(mockServiceClient as any);
+      vi.mocked(createServiceRoleClient).mockReturnValue(mockServiceClient as MockSupabaseClient);
 
       // Mock authenticated client for delete operation
       vi.mocked(createClient).mockReturnValue({
@@ -93,7 +97,7 @@ describe('Cancel API Route', () => {
             eq: vi.fn().mockResolvedValue({ error: null })
           }))
         }))
-      } as any);
+      } as MockSupabaseClient);
 
       const request = new Request('http://localhost/api/cancel?id=signup-123&type=comedian');
       const response = await GET(request);
@@ -134,7 +138,7 @@ describe('Cancel API Route', () => {
         })
       };
 
-      vi.mocked(createServiceRoleClient).mockReturnValue(mockServiceClient as any);
+      vi.mocked(createServiceRoleClient).mockReturnValue(mockServiceClient as MockSupabaseClient);
 
       // Mock authenticated client for delete operation
       vi.mocked(createClient).mockReturnValue({
@@ -148,7 +152,7 @@ describe('Cancel API Route', () => {
             eq: vi.fn().mockResolvedValue({ error: null })
           }))
         }))
-      } as any);
+      } as MockSupabaseClient);
 
       const request = new Request('http://localhost/api/cancel?id=signup-123&type=comedian&note=Schedule%20conflict');
       const response = await GET(request);
@@ -175,7 +179,7 @@ describe('Cancel API Route', () => {
       // 3. For delete operation (needs .eq() single chain)
 
       // First call: email client (for getPersonByEmail)
-      vi.mocked(createClient).mockReturnValueOnce({} as any);
+      vi.mocked(createClient).mockReturnValueOnce({} as MockSupabaseClient);
 
       // Second call: signup client (needs two .eq() calls)
       vi.mocked(createClient).mockReturnValueOnce({
@@ -188,7 +192,7 @@ describe('Cancel API Route', () => {
             }))
           }))
         }))
-      } as any);
+      } as MockSupabaseClient);
 
       // Third call: delete client (needs single .eq() and delete)
       vi.mocked(createClient).mockReturnValueOnce({
@@ -202,7 +206,7 @@ describe('Cancel API Route', () => {
             eq: vi.fn().mockResolvedValue({ error: null })
           }))
         }))
-      } as any);
+      } as MockSupabaseClient);
 
       const request = new Request('http://localhost/api/cancel?email=comedian@example.com');
       const response = await GET(request);
@@ -270,7 +274,7 @@ describe('Cancel API Route', () => {
         })
       };
 
-      vi.mocked(createServiceRoleClient).mockReturnValue(mockServiceClient as any);
+      vi.mocked(createServiceRoleClient).mockReturnValue(mockServiceClient as MockSupabaseClient);
 
       // Mock authenticated client for delete operation that fails
       vi.mocked(createClient).mockReturnValue({
@@ -284,7 +288,7 @@ describe('Cancel API Route', () => {
             eq: vi.fn().mockResolvedValue({ error: new Error('DB error') })
           }))
         }))
-      } as any);
+      } as MockSupabaseClient);
 
       const request = new Request('http://localhost/api/cancel?id=signup-123&type=comedian');
       const response = await GET(request);
