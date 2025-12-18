@@ -30,10 +30,8 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
 import { sendCancellationNotification } from '@/lib/resend';
 
-// Type definitions for mocks
-type MockSupabaseClient = {
-  from: ReturnType<typeof vi.fn>;
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MockSupabaseClient = any;
 
 describe('Cancel API Route', () => {
   const mockActiveDate = { id: 'date-123', date: '2025-11-25' };

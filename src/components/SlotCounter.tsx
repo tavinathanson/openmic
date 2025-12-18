@@ -7,6 +7,9 @@ import { getActiveOpenMicDate } from '@/lib/openMic';
 // Create a ref to share the isFull state
 export const slotsFullRef = { current: false };
 
+// Create a ref to allow external triggering of slot decrement
+export const decrementSlotRef = { current: () => {} };
+
 export default function SlotCounter() {
   const [remainingSlots, setRemainingSlots] = useState<number>(0);
   const [currentDate, setCurrentDate] = useState<string | null>(null);
@@ -56,6 +59,18 @@ export default function SlotCounter() {
 
     // Initial fetch
     fetchSlots();
+
+    // Expose decrement function for immediate UI feedback after signup
+    decrementSlotRef.current = () => {
+      setRemainingSlots(prev => {
+        const newValue = Math.max(0, prev - 1);
+        if (newValue === 0) {
+          setIsFull(true);
+          slotsFullRef.current = true;
+        }
+        return newValue;
+      });
+    };
 
     // Subscribe to changes on the view or underlying table
     const subscription = supabase

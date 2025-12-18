@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import validator from 'email-validator';
-import { slotsFullRef } from './SlotCounter';
+import { slotsFullRef, decrementSlotRef } from './SlotCounter';
 import { trackRegistration } from '@/utils/metaPixel';
 
 type SignupType = 'comedian' | 'audience';
@@ -205,6 +205,16 @@ export default function SignupForm() {
       setStatus('success');
       setIsWaitlist(data.is_waitlist || false);
       setMessage(data.message || 'You\'re signed up! You\'ll also get a confirmation email.');
+
+      // Immediately decrement slot counter for comedian signups (not waitlist)
+      // Wrapped in try-catch to ensure signup confirmation is never affected
+      try {
+        if (type === 'comedian' && !data.is_waitlist) {
+          decrementSlotRef.current();
+        }
+      } catch {
+        // Silently ignore - slot counter will sync via realtime subscription anyway
+      }
       setEmail('');
       setFullName('');
       setNumberOfPeople('1');
