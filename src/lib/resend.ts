@@ -134,30 +134,41 @@ export async function sendCancellationNotification(
 
 export async function sendEmailErrorNotification(
   failedEmail: string,
-  errorType: 'confirmation' | 'waitlist' | 'cancellation',
+  errorType: 'confirmation' | 'waitlist' | 'cancellation' | 'signup_api_error',
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   error: any,
   context?: {
     fullName?: string;
-    type?: 'comedian' | 'audience';
+    type?: string;
     date?: string;
+    timestamp?: string;
   }
 ) {
+  const isApiError = errorType === 'signup_api_error';
+  const subject = isApiError
+    ? 'API Error: Signup failed'
+    : `Email Error: Failed to send ${errorType} email`;
+  const footer = isApiError
+    ? '<p>The signup FAILED. The user saw an error. You may want to reach out.</p>'
+    : '<p>The signup was successful, but the user did not receive a confirmation email. You may want to contact them manually.</p>';
+
   try {
     await resend.emails.send({
       from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
       to: EXTRA_NOTIFY_EMAIL,
-      subject: `Email Error: Failed to send ${errorType} email`,
+      subject,
       html: `
-        <p><strong>Failed to send ${errorType} email</strong></p>
+        <p><strong>${isApiError ? 'Signup API error' : `Failed to send ${errorType} email`}</strong></p>
         <ul>
           <li><strong>Email:</strong> ${failedEmail}</li>
           ${context?.fullName ? `<li><strong>Name:</strong> ${context.fullName}</li>` : ''}
           ${context?.type ? `<li><strong>Type:</strong> ${context.type}</li>` : ''}
           ${context?.date ? `<li><strong>Date:</strong> ${context.date}</li>` : ''}
+          ${context?.timestamp ? `<li><strong>Timestamp:</strong> ${context.timestamp}</li>` : ''}
           <li><strong>Error:</strong> ${error?.message || JSON.stringify(error)}</li>
+          ${error?.code ? `<li><strong>Code:</strong> ${error.code}</li>` : ''}
         </ul>
-        <p>The signup was successful, but the user did not receive a confirmation email. You may want to contact them manually.</p>
+        ${footer}
       `,
     });
   } catch (notificationError) {

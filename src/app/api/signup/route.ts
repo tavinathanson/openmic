@@ -7,9 +7,16 @@ import { parseISO } from 'date-fns';
 import { getActiveOpenMicDate } from '@/lib/openMic';
 
 export async function POST(request: Request) {
+  let email: string | undefined;
+  let type: string | undefined;
+  let full_name: string | undefined;
   try {
     const supabase = await createServerSupabaseClient();
-    const { email, type, full_name, number_of_people, first_mic_ever, will_support } = await request.json();
+    const body = await request.json();
+    email = body.email;
+    type = body.type;
+    full_name = body.full_name;
+    const { number_of_people, first_mic_ever, will_support } = body;
 
     if (!email || !type) {
       return NextResponse.json(
@@ -254,6 +261,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Signup error:', error);
+    // Notify Tavi about the signup failure
+    try {
+      await sendEmailErrorNotification(
+        email || 'unknown',
+        'signup_api_error',
+        error,
+        {
+          fullName: full_name || 'unknown',
+          type: type || 'unknown',
+          timestamp: new Date().toISOString()
+        }
+      );
+    } catch {
+      // Don't let notification failure mask the original error
+    }
     return NextResponse.json(
       { error: 'Failed to process signup' },
       { status: 500 }
