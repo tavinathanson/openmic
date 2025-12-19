@@ -81,6 +81,7 @@ describe('sendEmailErrorNotification', () => {
   });
 
   it('does not throw if error notification itself fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     mockSend.mockRejectedValueOnce(new Error('Resend API down'));
 
     // Should not throw

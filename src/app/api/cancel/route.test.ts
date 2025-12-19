@@ -248,6 +248,7 @@ describe('Cancel API Route', () => {
     });
 
     it('returns 500 when delete operation fails', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
       // Mock service role client for fetching signup and person data
       const mockServiceClient = {
         from: vi.fn((table: string) => {

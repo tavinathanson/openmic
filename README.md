@@ -15,6 +15,26 @@ Mostly written by AI tools, including this README! Except this line. A human wro
 - Date-specific open mic events and signups
 - Active date management system
 - Encourage users to support the venue with a purchase
+- Admin check-in system with early/on-time/late tracking
+- Weighted lottery system for fair performer selection
+
+## Lottery System
+
+The app includes a weighted lottery system for selecting performers:
+
+**Ticket Weights (1, 3, or 5 tickets):**
+- Base: 1 ticket for being checked in
+- Early bird bonus: +2 tickets for first 5 signups
+- Early check-in bonus: +2 tickets for checking in early
+
+**Late Handling:**
+- Late arrivals are always drawn after on-time/early people
+- Late people are ordered by lateness (least late first)
+
+**Testing:**
+```bash
+npx ts-node scripts/test-lottery.ts
+```
 
 ## Quick Start
 
@@ -157,6 +177,8 @@ The app is optimized for Vercel deployment. Just push to GitHub and import your 
 ## Available Commands
 
 - `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run test` - Run tests
 - `npm run db:push` - Push migrations to development database
 - `npm run db:push:prod` - Push migrations to production database
 - `npm run db:import` - Import people data from CSV
@@ -164,6 +186,7 @@ The app is optimized for Vercel deployment. Just push to GitHub and import your 
 - `npm run db:reset` - Reset development database
 - `npm run db:reset:prod` - Reset production database
 - `npm run sync:comedians` - Manually check for new comedians and create review sheet
+- `npx ts-node scripts/test-lottery.ts` - Test lottery algorithm against live data
 
 ## License
 

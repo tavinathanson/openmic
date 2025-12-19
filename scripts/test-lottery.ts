@@ -63,23 +63,37 @@ async function testLotteryAlgorithm() {
       c.lottery_order === null
     ) || [];
     
-    eligibleComedians.forEach(c => {
+    // Split eligible comedians into lottery eligible (on-time/early) and late
+    const lotteryEligible = eligibleComedians.filter(c => c.check_in_status !== 'late');
+    const lateComedians = eligibleComedians
+      .filter(c => c.check_in_status === 'late')
+      .sort((a, b) => new Date(a.checked_in_at).getTime() - new Date(b.checked_in_at).getTime());
+
+    console.log(`\n  Lottery Eligible (on-time/early): ${lotteryEligible.length}`);
+    lotteryEligible.forEach(c => {
       let tickets = 1; // Base ticket
       const bonuses = [];
-      
+
       if (earlyBirds.includes(c.id)) {
-        tickets++;
-        bonuses.push('early bird');
+        tickets += 2;
+        bonuses.push('early bird +2');
       }
-      
+
       if (c.check_in_status === 'early') {
-        tickets++;
-        bonuses.push('early check-in');
+        tickets += 2;
+        bonuses.push('early check-in +2');
       }
 
       const person = Array.isArray(c.people) ? c.people[0] : c.people;
       console.log(`  - ${person?.full_name || 'Unknown'}: ${tickets} ticket(s)` +
         (bonuses.length > 0 ? ` (${bonuses.join(', ')})` : ''));
+    });
+
+    console.log(`\n  Late (ordered by lateness, drawn after lottery): ${lateComedians.length}`);
+    lateComedians.forEach((c, index) => {
+      const person = Array.isArray(c.people) ? c.people[0] : c.people;
+      const checkedInAt = c.checked_in_at ? new Date(c.checked_in_at).toLocaleTimeString() : 'unknown';
+      console.log(`  ${index + 1}. ${person?.full_name || 'Unknown'} (checked in at ${checkedInAt})`);
     });
     
     // Check for issues
@@ -139,24 +153,29 @@ async function testLotteryAlgorithm() {
       console.log(`✓ No 'not_coming' comedians have lottery orders`);
     }
     
-    // Check 5: Verify ticket calculation is correct (max 3 per person)
+    // Check 5: Verify ticket calculation is correct (1, 3, or 5 tickets)
     console.log(`\n🎫 Testing Ticket Calculation Logic:`);
     let ticketTestPassed = true;
-    eligibleComedians.forEach(c => {
+    lotteryEligible.forEach(c => {
       let expectedTickets = 1;
-      if (earlyBirds.includes(c.id)) expectedTickets++;
-      if (c.check_in_status === 'early') expectedTickets++;
-      
-      if (expectedTickets > 3) {
+      if (earlyBirds.includes(c.id)) expectedTickets += 2;
+      if (c.check_in_status === 'early') expectedTickets += 2;
+
+      if (expectedTickets > 5) {
         const person = Array.isArray(c.people) ? c.people[0] : c.people;
-        console.log(`❌ ERROR: ${person?.full_name} would have ${expectedTickets} tickets (max is 3)`);
+        console.log(`❌ ERROR: ${person?.full_name} would have ${expectedTickets} tickets (max is 5)`);
+        ticketTestPassed = false;
+      }
+      if (![1, 3, 5].includes(expectedTickets)) {
+        const person = Array.isArray(c.people) ? c.people[0] : c.people;
+        console.log(`❌ ERROR: ${person?.full_name} has ${expectedTickets} tickets (should be 1, 3, or 5)`);
         ticketTestPassed = false;
       }
     });
-    if (ticketTestPassed && eligibleComedians.length > 0) {
-      console.log(`✓ All ticket calculations are correct (max 3 per person)`);
-    } else if (eligibleComedians.length === 0) {
-      console.log(`✓ No eligible comedians to test ticket calculation`);
+    if (ticketTestPassed && lotteryEligible.length > 0) {
+      console.log(`✓ All ticket calculations are correct (1, 3, or 5 per person)`);
+    } else if (lotteryEligible.length === 0) {
+      console.log(`✓ No lottery-eligible comedians to test ticket calculation`);
     }
     
     // Check 6: Verify no duplicate lottery orders
@@ -192,15 +211,15 @@ async function testLotteryAlgorithm() {
     
     // Check 9: Test edge cases
     console.log(`\n🔍 Edge Case Tests:`);
-    
+
     // Edge case: What if someone is both early bird AND early check-in?
-    const doubleBonus = eligibleComedians.filter(c => 
+    const doubleBonus = lotteryEligible.filter(c =>
       earlyBirds.includes(c.id) && c.check_in_status === 'early'
     );
     if (doubleBonus.length > 0) {
-      console.log(`✓ ${doubleBonus.length} comedian(s) have both early bird + early check-in (3 tickets total)`);
+      console.log(`✓ ${doubleBonus.length} comedian(s) have both early bird + early check-in (5 tickets total)`);
     }
-    
+
     // Edge case: Check for any null/undefined person data
     const missingPersonData = allComedians?.filter(c => !c.people) || [];
     if (missingPersonData.length > 0) {
@@ -208,8 +227,51 @@ async function testLotteryAlgorithm() {
     } else {
       console.log(`✓ All comedians have associated person data`);
     }
+
+    // Check 10: Verify late comedians come after on-time/early in selections
+    console.log(`\n⏰ Late Comedian Ordering Tests:`);
+    const selectedLate = selectedComedians.filter(c => c.check_in_status === 'late');
+    const selectedOnTime = selectedComedians.filter(c => c.check_in_status !== 'late');
+
+    if (selectedLate.length > 0 && selectedOnTime.length > 0) {
+      // Find the highest lottery order among on-time/early
+      const maxOnTimeOrder = Math.max(...selectedOnTime.map(c => c.lottery_order));
+      // Find the lowest lottery order among late
+      const minLateOrder = Math.min(...selectedLate.map(c => c.lottery_order));
+
+      if (minLateOrder > maxOnTimeOrder) {
+        console.log(`✓ All late comedians (${selectedLate.length}) come after on-time/early comedians`);
+      } else {
+        console.log(`❌ ERROR: Some late comedians appear before on-time/early comedians!`);
+        console.log(`   - Highest on-time order: ${maxOnTimeOrder}`);
+        console.log(`   - Lowest late order: ${minLateOrder}`);
+      }
+
+      // Verify late comedians are in order of checked_in_at
+      const selectedLateSorted = [...selectedLate].sort((a, b) => a.lottery_order - b.lottery_order);
+      let lateOrderCorrect = true;
+      for (let i = 1; i < selectedLateSorted.length; i++) {
+        const prevTime = new Date(selectedLateSorted[i - 1].checked_in_at).getTime();
+        const currTime = new Date(selectedLateSorted[i].checked_in_at).getTime();
+        if (currTime < prevTime) {
+          lateOrderCorrect = false;
+          break;
+        }
+      }
+      if (lateOrderCorrect && selectedLate.length > 1) {
+        console.log(`✓ Late comedians are ordered by check-in time (least late first)`);
+      } else if (!lateOrderCorrect) {
+        console.log(`❌ ERROR: Late comedians are NOT in order of lateness!`);
+      }
+    } else if (selectedLate.length > 0) {
+      console.log(`ℹ️  Only late comedians have been selected (${selectedLate.length})`);
+    } else if (selectedOnTime.length > 0) {
+      console.log(`✓ No late comedians selected yet (${selectedOnTime.length} on-time/early selected)`);
+    } else {
+      console.log(`✓ No comedians selected yet`);
+    }
     
-    // Check 10: Analyze lottery fairness from historical data
+    // Check 11: Analyze lottery fairness from historical data
     if (selectedComedians.length >= 4) {
       console.log(`\n🎲 Lottery Fairness Analysis (from actual selections):`);
       
@@ -250,8 +312,9 @@ async function testLotteryAlgorithm() {
     console.log(`\n📊 Test Coverage:`);
     console.log(`  ✓ Lottery order validation`);
     console.log(`  ✓ Check-in status validation`);
-    console.log(`  ✓ Ticket calculation (max 3)`);
+    console.log(`  ✓ Ticket calculation (1, 3, or 5 tickets)`);
     console.log(`  ✓ Early bird detection`);
+    console.log(`  ✓ Late comedian ordering (by lateness, after on-time)`);
     console.log(`  ✓ Edge case handling`);
     console.log(`  ✓ Data integrity checks`);
     
