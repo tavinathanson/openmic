@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
 
 interface Comedian {
   id: string;
@@ -45,27 +44,15 @@ export default function ListPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen py-20 px-4 sm:px-6 lg:px-8 bg-sky-50/50 flex items-center justify-center">
+      <main className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-sky-50/50 flex items-center justify-center">
         <div className="text-xl text-muted-foreground">Loading...</div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen py-20 px-4 sm:px-6 lg:px-8 bg-sky-50/50">
+    <main className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-sky-50/50">
       <div className="max-w-2xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800">Open Mic List</h1>
-
-        <div className="bg-card rounded-xl p-6 shadow-sm border border-border flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-3 text-gray-800">Scan to View on Your Phone</h2>
-          <QRCodeSVG
-            value="https://openmic.tavicomedy.com/list"
-            size={200}
-            level="H"
-            includeMargin={true}
-          />
-        </div>
-
         <div className="bg-yellow-100 border-2 border-yellow-400 rounded-t-xl p-3 text-center -mb-0.5">
           <p className="text-lg font-bold text-yellow-900">✓ Find Tavi to check in!</p>
         </div>
@@ -75,16 +62,17 @@ export default function ListPage() {
           </p>
         </div>
 
-        <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+        <div className="bg-card rounded-xl p-6 shadow-sm border-2 border-green-400">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-green-600">🎤 Lineup Order</h2>
-            <span className="text-base text-gray-600 italic">Random drawing</span>
+            <h2 className="text-2xl font-bold text-green-600">✅ Confirmed Order</h2>
+            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Locked In</span>
           </div>
           {selectedComedians.length > 0 ? (
             <div className="space-y-3">
               {selectedComedians.map((c) => (
-                <div key={c.id} className="text-lg bg-green-100 text-green-800 rounded-md p-4 font-semibold">
-                  {c.lottery_order}. {c.full_name}
+                <div key={c.id} className="text-lg bg-green-100 text-green-800 rounded-md p-4 font-semibold flex items-center gap-3">
+                  <span className="inline-flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full text-base font-bold">{c.lottery_order}</span>
+                  <span>{c.full_name}</span>
                 </div>
               ))}
             </div>
@@ -109,15 +97,17 @@ export default function ListPage() {
         </div>
 
         {checkedIn.length > 0 && (
-          <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-blue-600">⏳ Waiting to Go Up</h2>
-              <span className="text-base text-gray-600 italic">Not in order yet</span>
+          <div className="bg-card rounded-xl p-6 shadow-sm border-2 border-amber-300">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-bold text-amber-600">🎲 In the Lottery Pool</h2>
+              <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">Random Draw</span>
             </div>
+            <p className="text-sm text-amber-700 mb-4 font-medium">Order NOT set yet: will be drawn randomly!</p>
             <div className="space-y-2">
               {checkedIn.map((c) => (
-                <div key={c.id} className="p-3 bg-blue-50 rounded-md text-gray-800">
-                  {c.full_name}
+                <div key={c.id} className="p-3 bg-amber-50 rounded-md text-gray-800 flex justify-between items-center">
+                  <span>{c.full_name}</span>
+                  <span className="text-amber-600 text-sm font-medium">Order: TBD</span>
                 </div>
               ))}
             </div>
@@ -125,15 +115,17 @@ export default function ListPage() {
         )}
 
         {notCheckedIn.length > 0 && (
-          <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-muted-foreground">📋 Not Yet Checked In</h2>
-              <span className="text-base text-gray-600 italic">Not in order yet</span>
+          <div className="bg-card rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-bold text-gray-400">👻 Not Checked In</h2>
+              <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium">Not in draw</span>
             </div>
+            <p className="text-sm text-gray-400 mb-4">Must check in to enter lottery</p>
             <div className="space-y-2">
               {notCheckedIn.map((c) => (
-                <div key={c.id} className="p-3 bg-muted/30 rounded-md text-muted-foreground">
-                  {c.full_name}
+                <div key={c.id} className="p-3 bg-gray-50 rounded-md text-gray-400 flex justify-between items-center">
+                  <span>{c.full_name}</span>
+                  <span className="text-xs text-gray-300">–</span>
                 </div>
               ))}
             </div>

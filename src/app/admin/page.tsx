@@ -68,7 +68,11 @@ export default function AdminPage() {
   }, []);
 
   const togglePlusOne = async (comedianId: string, currentValue: boolean) => {
-    setLoading(true);
+    // Optimistic update
+    setComedians(prev => prev.map(c =>
+      c.id === comedianId ? { ...c, plus_one: !currentValue } : c
+    ));
+
     try {
       const res = await fetch('/api/admin/plusone', {
         method: 'POST',
@@ -81,36 +85,47 @@ export default function AdminPage() {
       });
 
       if (!res.ok) {
+        // Revert on error
+        setComedians(prev => prev.map(c =>
+          c.id === comedianId ? { ...c, plus_one: currentValue } : c
+        ));
         const data = await res.json();
-        setError(data.error || 'Failed to update plus one');
-      } else {
-        await loadComedians();
+        alert('Failed to update plus one: ' + (data.error || 'Unknown error'));
       }
     } catch {
-      setError('Failed to update plus one');
+      // Revert on error
+      setComedians(prev => prev.map(c =>
+        c.id === comedianId ? { ...c, plus_one: currentValue } : c
+      ));
+      alert('Failed to update plus one: Network error');
     }
-    setLoading(false);
   };
 
   const checkIn = async (signUpId: string, status: string) => {
-    setLoading(true);
+    // Store previous state for rollback
+    const previousComedians = comedians;
+
+    // Optimistic update
+    setComedians(prev => prev.map(c =>
+      c.id === signUpId ? { ...c, check_in_status: status === 'uncheck' ? null : status } : c
+    ));
+
     try {
       const res = await fetch('/api/admin/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ signUpId, status, password: 'tavi' })
       });
-      
+
       if (!res.ok) {
+        setComedians(previousComedians);
         const data = await res.json();
-        setError(data.error || 'Check-in failed');
-      } else {
-        await loadComedians();
+        alert('Check-in failed: ' + (data.error || 'Unknown error'));
       }
     } catch {
-      setError('Check-in failed');
+      setComedians(previousComedians);
+      alert('Check-in failed: Network error');
     }
-    setLoading(false);
   };
 
   const addWalkIn = async (e: React.FormEvent) => {
@@ -440,15 +455,6 @@ export default function AdminPage() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   <button
-                    onClick={() => togglePlusOne(comedian.id, comedian.plus_one)}
-                    className={`${comedian.plus_one ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-500 hover:bg-gray-600'} text-white px-3 py-1.5 rounded-md text-sm transition-colors disabled:opacity-50`}
-                    disabled={loading}
-                  >
-                    {comedian.plus_one ? '+1' : 'Solo'}
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
-                  <button
                     onClick={() => checkIn(comedian.id, 'early')}
                     className="bg-green-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
                     disabled={loading || comedian.check_in_status === 'early' || comedian.lottery_order !== null}
@@ -485,6 +491,21 @@ export default function AdminPage() {
                       Uncheck
                     </button>
                   )}
+                </div>
+                <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-200">
+                  <span className="text-sm text-gray-500">Bringing guest?</span>
+                  <button
+                    onClick={() => togglePlusOne(comedian.id, comedian.plus_one)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${comedian.plus_one ? 'bg-purple-600' : 'bg-gray-300'}`}
+                    disabled={loading}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${comedian.plus_one ? 'translate-x-6' : 'translate-x-1'}`}
+                    />
+                  </button>
+                  <span className={`text-sm font-medium ${comedian.plus_one ? 'text-purple-600' : 'text-gray-400'}`}>
+                    {comedian.plus_one ? '+1 Guest' : 'Solo'}
+                  </span>
                 </div>
               </div>
             ))}
