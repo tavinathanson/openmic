@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import validator from 'email-validator';
 import { slotsFullRef, decrementSlotRef } from './SlotCounter';
 import { trackRegistration } from '@/utils/metaPixel';
+import { createClient } from '@/utils/supabase/client';
+import { getActiveOpenMicDate, isComedianSignupWindowOpen, getComedianSignupOpenDate } from '@/lib/openMic';
 
 type SignupType = 'comedian' | 'audience';
 
@@ -27,6 +29,8 @@ export default function SignupForm() {
   const [captchaQuestion, setCaptchaQuestion] = useState('');
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [userCaptchaAnswer, setUserCaptchaAnswer] = useState('');
+  const [comedianWindowOpen, setComedianWindowOpen] = useState<boolean | null>(null);
+  const [signupOpensDate, setSignupOpensDate] = useState<string | null>(null);
 
   // Generate captcha question
   const generateCaptcha = () => {
@@ -56,6 +60,32 @@ export default function SignupForm() {
   // Generate captcha on mount
   useEffect(() => {
     generateCaptcha();
+  }, []);
+
+  // Check if comedian signup window is open
+  useEffect(() => {
+    async function checkSignupWindow() {
+      try {
+        const supabase = createClient();
+        const data = await getActiveOpenMicDate(supabase);
+        const isOpen = isComedianSignupWindowOpen(data.date);
+        setComedianWindowOpen(isOpen);
+
+        if (!isOpen) {
+          const opensDate = getComedianSignupOpenDate(data.date);
+          setSignupOpensDate(opensDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+          }));
+        }
+      } catch (error) {
+        console.error('Error checking signup window:', error);
+        // Default to open if we can't check (fail open)
+        setComedianWindowOpen(true);
+      }
+    }
+    checkSignupWindow();
   }, []);
 
   // Reset state when type changes
@@ -284,7 +314,25 @@ export default function SignupForm() {
         </div>
       </div>
 
-      {type === 'comedian' && (
+      {type === 'comedian' && comedianWindowOpen === false && (
+        <div className="p-6 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 text-center space-y-3">
+          <div className="flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-semibold">Comedian signups open {signupOpensDate}</span>
+          </div>
+          <p className="text-sm">
+            If you don&apos;t already get emails from me,{' '}
+            <a href="https://www.tavicomedy.com/#updates" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">
+              join the mailing list
+            </a>{' '}
+            to get notified when signups open!
+          </p>
+        </div>
+      )}
+
+      {type === 'comedian' && comedianWindowOpen !== false && (
         <div className="p-4 bg-primary-light/5 text-primary-dark rounded-lg border border-primary-light/10">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,6 +343,9 @@ export default function SignupForm() {
         </div>
       )}
 
+      {/* Hide the rest of the form if comedian window is closed */}
+      {(type !== 'comedian' || comedianWindowOpen !== false) && (
+        <>
       {type === 'comedian' && !areSlotsFull && (
         <div className="text-sm text-muted text-center mb-4">
           No worries if plans change! Canceling your spot is easy.
@@ -494,6 +545,8 @@ export default function SignupForm() {
         >
           {message}
         </div>
+      )}
+        </>
       )}
     </form>
   );

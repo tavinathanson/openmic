@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { signRlsJwt } from '@/lib/jwt';
 import { sendConfirmationEmail, sendWaitlistEmail, sendEmailErrorNotification } from '@/lib/resend';
 import { parseISO } from 'date-fns';
-import { getActiveOpenMicDate } from '@/lib/openMic';
+import { getActiveOpenMicDate, isComedianSignupWindowOpen } from '@/lib/openMic';
 
 export async function POST(request: Request) {
   let email: string | undefined;
@@ -39,6 +39,14 @@ export async function POST(request: Request) {
     } catch {
       return NextResponse.json(
         { error: 'No active open mic date found' },
+        { status: 400 }
+      );
+    }
+
+    // Check if comedian signup window is open (audience can sign up anytime)
+    if (type === 'comedian' && !isComedianSignupWindowOpen(activeDate.date)) {
+      return NextResponse.json(
+        { error: 'Comedian signups are not open yet for this date' },
         { status: 400 }
       );
     }
