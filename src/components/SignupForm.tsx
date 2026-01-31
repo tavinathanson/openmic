@@ -323,11 +323,10 @@ export default function SignupForm() {
             <span className="font-semibold">Comedian signups open {signupOpensDate}</span>
           </div>
           <p className="text-sm">
-            If you don&apos;t already get emails from me,{' '}
             <a href="https://www.tavicomedy.com/#updates" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">
-              join the mailing list
+              Join my list
             </a>{' '}
-            to get notified when signups open!
+            to get occasional reminders!
           </p>
         </div>
       )}
