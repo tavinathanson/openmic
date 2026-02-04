@@ -328,6 +328,13 @@ export default function SignupForm() {
             </a>{' '}
             to get occasional reminders!
           </p>
+          <button
+            type="button"
+            onClick={() => setType('audience')}
+            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+          >
+            Sign up as audience instead →
+          </button>
         </div>
       )}
 
