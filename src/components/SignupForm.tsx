@@ -196,9 +196,9 @@ export default function SignupForm() {
 
     // Validate number of people
     const numPeople = parseInt(numberOfPeople);
-    if (isNaN(numPeople) || numPeople < 1) {
+    if (isNaN(numPeople) || numPeople < 1 || numPeople > 20) {
       setStatus('error');
-      setMessage('Number of people must be at least 1');
+      setMessage('Number of people must be between 1 and 20');
       return;
     }
 
@@ -455,6 +455,7 @@ export default function SignupForm() {
               value={numberOfPeople}
               onChange={(e) => setNumberOfPeople(e.target.value)}
               min="1"
+              max="20"
               required
               className="w-full px-4 py-3 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg"
               placeholder={type === 'comedian' ? "Your best guess (including yourself)" : "Your best guess"}
