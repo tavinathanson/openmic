@@ -5,40 +5,46 @@ export default function Footer() {
   return (
     <footer className="bg-purple-50/80 backdrop-blur-sm border-t border-border">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-6 space-y-4">
-          <div className="text-center text-sm text-gray-600 space-y-2">
-            <p className="font-medium">
-              <a
-                href="https://tavicomedy.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-display text-purple-600 hover:text-purple-800 transition-colors text-2xl"
-              >
-                TAVI COMEDY LAB
-              </a>
-            </p>
-            <p>
-              This open mic sign-up tool is{' '}
-              <Link
-                href="https://github.com/tavinathanson/openmic"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-purple-600 hover:text-purple-800 transition-colors"
-              >
-                open source
-              </Link>
-            </p>
+        <div className="py-8 space-y-6">
+          {/* Main site CTA */}
+          <div className="text-center">
+            <a
+              href="https://tavicomedy.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block group"
+            >
+              <div className="bg-purple-600 hover:bg-purple-700 transition-colors rounded-xl px-6 py-4 shadow-md">
+                <p className="font-display text-white text-2xl tracking-wide">
+                  TAVI COMEDY LAB
+                </p>
+                <p className="text-purple-200 text-sm mt-1">
+                  Upcoming shows, tickets & more &rarr;
+                </p>
+              </div>
+            </a>
           </div>
-          <div className="flex justify-center">
+
+          {/* Secondary links */}
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
             <a
               href="https://www.instagram.com/tavinathanson"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:opacity-80 transition-opacity flex items-center gap-2 text-purple-600"
+              className="hover:text-purple-600 transition-colors flex items-center gap-1.5"
             >
-              <FaInstagram className="w-5 h-5 mt-0.5" />
-              <span className="font-medium">@tavinathanson</span>
+              <FaInstagram className="w-4 h-4" />
+              <span>@tavinathanson</span>
             </a>
+            <span className="text-gray-300">|</span>
+            <Link
+              href="https://github.com/tavinathanson/openmic"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-purple-600 transition-colors"
+            >
+              Open source
+            </Link>
           </div>
         </div>
       </div>

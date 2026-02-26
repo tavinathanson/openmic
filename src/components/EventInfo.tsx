@@ -42,7 +42,28 @@ export default function EventInfo() {
     fetchDate();
   }, [supabase]);
 
-  if (!date || !time) return null;
+  if (!date || !time) return (
+    <div className="bg-card rounded-xl p-6 shadow-sm border border-border animate-pulse">
+      <div className="flex flex-col md:flex-row items-center gap-8">
+        <div className="flex-shrink-0 w-32 h-32 bg-gray-200 rounded-lg" />
+        <div className="flex-grow space-y-4 w-full">
+          <div className="space-y-2">
+            <div className="h-7 bg-gray-200 rounded w-3/4 mx-auto md:mx-0" />
+            <div className="h-5 bg-gray-200 rounded w-1/2 mx-auto md:mx-0" />
+          </div>
+          <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+            <div className="h-8 bg-gray-200 rounded-full w-36" />
+            <div className="h-8 bg-gray-200 rounded-full w-36" />
+            <div className="h-8 bg-gray-200 rounded-full w-32" />
+          </div>
+        </div>
+      </div>
+      <div className="mt-6 pt-6 border-t border-border">
+        <div className="h-4 bg-gray-200 rounded w-2/3 mx-auto" />
+        <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto mt-2" />
+      </div>
+    </div>
+  );
 
   const dateObj = new Date(date);
   const month = dateObj.toLocaleString('default', { month: 'short' });
