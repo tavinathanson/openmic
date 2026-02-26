@@ -4,8 +4,11 @@ declare global {
   }
 }
 
-export const trackRegistration = () => {
+export const trackRegistration = (type: 'comedian' | 'audience') => {
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', 'Lead');
+    window.fbq('track', 'CompleteRegistration', {
+      content_name: type === 'comedian' ? 'Comedian Signup' : 'Audience Signup',
+      status: true,
+    });
   }
 }; 

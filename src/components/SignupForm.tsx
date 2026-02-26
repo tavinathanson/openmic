@@ -255,7 +255,7 @@ export default function SignupForm() {
       generateCaptcha(); // Generate new captcha after successful submission
       
       // Track registration conversion
-      trackRegistration();
+      trackRegistration(type);
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'An error occurred. Please try again.');
