@@ -26,6 +26,7 @@ export default function SignupForm() {
   const [areSlotsFull, setAreSlotsFull] = useState(false);
   const [existingSignupIsWaitlist, setExistingSignupIsWaitlist] = useState(false);
   const [willSupport, setWillSupport] = useState(false);
+  const [noShowAck, setNoShowAck] = useState(false);
   const [captchaQuestion, setCaptchaQuestion] = useState('');
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [userCaptchaAnswer, setUserCaptchaAnswer] = useState('');
@@ -266,13 +267,14 @@ export default function SignupForm() {
     }
   }
 
-  const isFormValid = email && 
+  const isFormValid = email &&
     !emailError &&
     !isValidating &&
     (existingName || (fullName && fullName.trim().length > 0)) &&
     numberOfPeople &&
     !alreadySignedUp &&
-    userCaptchaAnswer.trim() !== '';
+    userCaptchaAnswer.trim() !== '' &&
+    (type !== 'comedian' || noShowAck);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -349,15 +351,15 @@ export default function SignupForm() {
         </div>
       )}
 
-      {/* Hide the rest of the form if comedian window is closed */}
-      {(type !== 'comedian' || comedianWindowOpen !== false) && (
-        <>
-      {type === 'comedian' && !areSlotsFull && (
-        <div className="text-sm text-muted text-center mb-4">
+      {type === 'comedian' && comedianWindowOpen !== false && !areSlotsFull && (
+        <div className="text-sm text-muted text-center">
           No worries if plans change! Canceling your spot is easy.
         </div>
       )}
 
+      {/* Hide the rest of the form if comedian window is closed */}
+      {(type !== 'comedian' || comedianWindowOpen !== false) && (
+        <>
       <div>
         <div className="relative">
           <label htmlFor="email" className="block text-sm font-medium text-muted mb-2">
@@ -464,28 +466,22 @@ export default function SignupForm() {
         </div>
       )}
 
-      {type === 'comedian' && showNameField && !alreadySignedUp && (
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2 p-4 bg-muted-light/5 rounded-lg border border-muted-light/10">
-            <input
-              type="checkbox"
-              id="firstMicEver"
-              checked={firstMicEver}
-              onChange={(e) => setFirstMicEver(e.target.checked)}
-              className="h-4 w-4 rounded border-muted-light text-primary focus:ring-primary"
-            />
-            <label htmlFor="firstMicEver" className="text-sm text-muted-dark font-medium">
-              This is my first time ever performing comedy! (Free cookie 🍪)
-            </label>
-          </div>
-        </div>
-      )}
-
       {!alreadySignedUp && (
-        <div className="p-4 bg-muted-light/5 text-muted-dark rounded-lg border border-muted-light/10">
-          <p className="text-sm mb-3">
-            This open mic is only possible thanks to our hosts at Crave. To keep the show going, please support them with a purchase if you can. This is not required, but is very much appreciated!
-          </p>
+        <div className="space-y-3 p-4 bg-muted-light/5 rounded-lg border border-muted-light/10">
+          {type === 'comedian' && showNameField && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="firstMicEver"
+                checked={firstMicEver}
+                onChange={(e) => setFirstMicEver(e.target.checked)}
+                className="h-4 w-4 rounded border-muted-light text-primary focus:ring-primary"
+              />
+              <label htmlFor="firstMicEver" className="text-sm text-muted-dark font-medium">
+                This is my first time ever performing comedy! (Free cookie 🍪)
+              </label>
+            </div>
+          )}
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
@@ -494,51 +490,80 @@ export default function SignupForm() {
               onChange={(e) => setWillSupport(e.target.checked)}
               className="h-4 w-4 rounded border-muted-light text-primary focus:ring-primary"
             />
-            <label htmlFor="supportCrave" className="text-sm font-medium">
-              I&apos;ll grab a bite or drink to help keep this mic free! ☕
+            <label htmlFor="supportCrave" className="text-sm text-muted-dark font-medium">
+              I&apos;ll support Crave with a bite or drink to help keep this mic free! ☕
             </label>
           </div>
         </div>
       )}
 
       {!alreadySignedUp && (
-        <div>
-          <label htmlFor="captcha" className="block text-sm font-medium text-muted mb-2">
-            Quick math check to catch bots: What is {captchaQuestion}?
-          </label>
-          <input
-            type="text"
-            id="captcha"
-            value={userCaptchaAnswer}
-            onChange={(e) => {
-              setUserCaptchaAnswer(e.target.value);
-              if (status === 'error') {
-                setStatus('idle');
-                setMessage('');
-              }
-            }}
-            required
-            className={`w-full px-4 py-3 bg-card border ${
-              status === 'error' && message.includes('Incorrect answer') ? 'border-red-500' : 'border-border'
-            } rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg`}
-            placeholder="Enter your answer"
-          />
+        <div className="rounded-lg border border-border overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="captcha" className="block text-sm font-medium text-muted">
+                Quick math check: What is {captchaQuestion}?
+              </label>
+              <span className="text-xs font-medium text-muted uppercase tracking-wide">Required</span>
+            </div>
+            <input
+              type="text"
+              id="captcha"
+              value={userCaptchaAnswer}
+              onChange={(e) => {
+                setUserCaptchaAnswer(e.target.value);
+                if (status === 'error') {
+                  setStatus('idle');
+                  setMessage('');
+                }
+              }}
+              required
+              className={`w-full px-4 py-3 bg-card border ${
+                status === 'error' && message.includes('Incorrect answer') ? 'border-red-500' : 'border-border'
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-lg`}
+              placeholder="Enter your answer"
+            />
+          </div>
+          {type === 'comedian' && (
+            <div className={`flex items-center space-x-2 p-4 border-t ${noShowAck ? 'bg-amber-50 border-amber-200' : 'bg-amber-50 border-amber-400'}`}>
+              <input
+                type="checkbox"
+                id="noShowAck"
+                checked={noShowAck}
+                onChange={(e) => setNoShowAck(e.target.checked)}
+                className="h-4 w-4 rounded border-amber-400 text-primary focus:ring-primary"
+              />
+              <label htmlFor="noShowAck" className="text-sm text-amber-900 font-medium">
+                If I can&apos;t make it, I&apos;ll cancel my spot. Canceling is fine, no-showing is not.
+              </label>
+              <span className="ml-auto text-xs font-semibold text-amber-600 uppercase tracking-wide shrink-0">Required</span>
+            </div>
+          )}
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={status === 'loading' || isValidating || !isFormValid || alreadySignedUp}
-        className="w-full py-3 px-4 bg-primary text-white rounded-lg font-medium text-lg hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-      >
-        {status === 'loading' 
-          ? (type === 'comedian' && areSlotsFull ? 'Adding to waitlist...' : 'Signing up...')
-          : alreadySignedUp 
-            ? 'Already Signed Up' 
-            : type === 'comedian' && areSlotsFull
-              ? 'Add to Waitlist'
-              : 'Sign Up'}
-      </button>
+      <div className="space-y-2">
+        <button
+          type="submit"
+          disabled={status === 'loading' || isValidating || !isFormValid || alreadySignedUp}
+          className={`w-full py-3 px-4 rounded-lg font-medium text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 transition-all duration-200 ${
+            status === 'loading' || isValidating || !isFormValid || alreadySignedUp
+              ? 'bg-muted-light/20 text-muted cursor-not-allowed'
+              : 'bg-primary text-white hover:bg-primary-light'
+          }`}
+        >
+          {status === 'loading'
+            ? (type === 'comedian' && areSlotsFull ? 'Adding to waitlist...' : 'Signing up...')
+            : alreadySignedUp
+              ? 'Already Signed Up'
+              : type === 'comedian' && areSlotsFull
+                ? 'Add to Waitlist'
+                : 'Sign Up'}
+        </button>
+        {!isFormValid && !alreadySignedUp && status !== 'loading' && (
+          <p className="text-xs text-muted text-center">Fill in all required fields above to sign up</p>
+        )}
+      </div>
 
       {message && (
         <div
