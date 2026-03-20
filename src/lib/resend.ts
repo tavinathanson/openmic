@@ -59,7 +59,7 @@ async function sendEmail({
   if (isWaitlist) {
     message = `Thank you for adding your name to the waitlist for the Crave Laughs open mic at ${formattedTime} ${dateText}! I'll let you know if a spot opens up.`;
   } else if (type === 'comedian') {
-    message = `Thank you for signing up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you need to cancel, just reply to this email or <a href="${cancelUrl}">click here</a>.`;
+    message = `Thank you for signing up to perform at the Crave Laughs open mic at ${formattedTime} ${dateText}! If you can't make it, please cancel your spot by replying to this email or <a href="${cancelUrl}">clicking here</a>. Canceling is fine, no-showing is not.`;
   } else {
     message = `Thank you for signing up to attend the Crave Laughs open mic night at ${formattedTime} ${dateText}! See you there!`;
   }
