@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase';
 import { signRlsJwt } from '@/lib/jwt';
 import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
-import { sendCancellationNotification, sendEmailErrorNotification } from '@/lib/resend';
+import { sendCancellationNotification, sendEmailErrorNotification, sendWaitlistPromotionEmail } from '@/lib/resend';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -167,6 +167,54 @@ export async function GET(request: Request) {
           }
         );
         // Don't throw - we still want to return success since the cancellation worked
+      }
+    }
+
+    // Auto-promote next waitlisted comedian if a comedian just cancelled
+    if (signupType === 'comedian') {
+      try {
+        const serviceClient = createServiceRoleClient();
+
+        // Find the oldest waitlisted comedian for this date
+        const { data: nextWaitlisted } = await serviceClient
+          .from('sign_ups')
+          .select('id, person_id')
+          .eq('open_mic_date_id', activeDate.id)
+          .eq('signup_type', 'comedian')
+          .eq('is_waitlist', true)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .single();
+
+        if (nextWaitlisted) {
+          // Promote them off the waitlist
+          await serviceClient
+            .from('sign_ups')
+            .update({ is_waitlist: false })
+            .eq('id', nextWaitlisted.id);
+
+          // Get their email to notify them
+          const { data: promotedPerson } = await serviceClient
+            .from('people')
+            .select('email, full_name')
+            .eq('id', nextWaitlisted.person_id)
+            .single();
+
+          if (promotedPerson?.email) {
+            const eventDate = new Date(activeDate.date + 'T00:00:00');
+            await sendWaitlistPromotionEmail(
+              promotedPerson.email,
+              nextWaitlisted.id,
+              eventDate,
+              activeDate.time,
+              activeDate.timezone
+            );
+            console.log(`Promoted ${promotedPerson.full_name || promotedPerson.email} off waitlist`);
+          }
+        }
+      } catch (promoteError) {
+        // Log but don't fail the cancellation
+        console.error('Failed to auto-promote from waitlist:', promoteError);
       }
     }
 

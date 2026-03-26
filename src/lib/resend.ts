@@ -110,6 +110,31 @@ export async function sendWaitlistEmail(
   });
 }
 
+export async function sendWaitlistPromotionEmail(
+  email: string,
+  id: string,
+  date: Date,
+  time: string,
+  timezone: string = 'America/New_York'
+) {
+  if (!date || isNaN(date.getTime())) {
+    throw new Error('Invalid date provided for email');
+  }
+
+  const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cancel?id=${id}&type=comedian`;
+  const dateText = getDateText(date, timezone);
+  const [hours, minutes] = time.split(':');
+  const formattedTime = format(new Date(2000, 0, 1, parseInt(hours), parseInt(minutes)), 'h:mm a');
+
+  await resend.emails.send({
+    from: `${SENDER_NAME} <${process.env.NEXT_PUBLIC_APP_EMAIL}>`,
+    to: email,
+    bcc: EXTRA_NOTIFY_EMAIL,
+    subject: `You're off the waitlist for Crave Laughs Open Mic ${dateText}`,
+    html: `<p>A spot opened up for the Crave Laughs open mic at ${formattedTime} ${dateText} and you're in! If you can't make it, please cancel your spot by replying to this email or <a href="${cancelUrl}">clicking here</a>. Canceling is fine, no-showing is not.</p>`,
+  });
+}
+
 export async function sendCancellationNotification(
   email: string,
   fullName: string,
