@@ -12,6 +12,7 @@ interface Comedian {
   created_at: string;
   first_mic_ever: boolean;
   plus_one: boolean;
+  is_waitlist: boolean;
 }
 
 
@@ -25,6 +26,18 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyNames = async () => {
+    const names = comedians.map(c => c.full_name).join(', ');
+    try {
+      await navigator.clipboard.writeText(names);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      alert('Failed to copy');
+    }
+  };
 
   useEffect(() => {
     if (isAuthed) {
@@ -215,7 +228,18 @@ export default function AdminPage() {
     <main className="min-h-screen py-20 px-4 sm:px-6 lg:px-8 bg-sky-50/50">
       <div className="max-w-2xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold text-center text-gray-800">Open Mic Admin</h1>
-        
+
+        {comedians.length > 0 && (
+          <div className="flex justify-center">
+            <button
+              onClick={copyNames}
+              className="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              {copied ? '✓ Copied!' : `📋 Copy ${comedians.length} names`}
+            </button>
+          </div>
+        )}
+
         {error && (
           <div className="bg-destructive/10 border border-destructive text-destructive rounded-xl p-4">
             {error}
@@ -437,6 +461,11 @@ export default function AdminPage() {
                       {comedian.full_name}
                       {comedian.first_mic_ever && <span className="ml-1">🍪</span>}
                       {comedian.plus_one && <span className="ml-1">⊕</span>}
+                      {comedian.is_waitlist && (
+                        <span className="ml-2 inline-block px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 rounded-full">
+                          Waitlist
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div className="text-sm text-muted-foreground">

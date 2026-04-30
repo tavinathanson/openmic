@@ -37,7 +37,8 @@ export async function GET() {
       lottery_order: c.lottery_order,
       created_at: c.created_at,
       first_mic_ever: c.first_mic_ever,
-      plus_one: c.plus_one || false
+      plus_one: c.plus_one || false,
+      is_waitlist: c.is_waitlist || false
     })) || [];
 
     return NextResponse.json({ 
