@@ -29,7 +29,7 @@ export default function AdminPage() {
   const [copied, setCopied] = useState(false);
 
   const copyNames = async () => {
-    const names = comedians.map(c => c.full_name).join(', ');
+    const names = comedians.map(c => c.email).filter(Boolean).join(', ');
     try {
       await navigator.clipboard.writeText(names);
       setCopied(true);
@@ -235,7 +235,7 @@ export default function AdminPage() {
               onClick={copyNames}
               className="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
             >
-              {copied ? '✓ Copied!' : `📋 Copy ${comedians.length} names`}
+              {copied ? '✓ Copied!' : `📋 Copy ${comedians.length} emails`}
             </button>
           </div>
         )}
