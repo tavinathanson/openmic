@@ -34,6 +34,19 @@ export async function POST(request: Request) {
       .filter(c => c.check_in_status === 'late')
       .sort((a, b) => new Date(a.checked_in_at).getTime() - new Date(b.checked_in_at).getTime());
 
+    // Determine the early birds: the first 5 comedians to sign up overall, based on
+    // original signup order. Computed against the full signup list (not just the
+    // not-yet-drawn pool) so the bonus stays stable across multiple lottery draws.
+    const { data: earlyBirdData } = await supabase
+      .from('sign_ups')
+      .select('id')
+      .eq('open_mic_date_id', activeDateId)
+      .eq('signup_type', 'comedian')
+      .order('created_at', { ascending: true })
+      .limit(5);
+
+    const earlyBirdIds = new Set((earlyBirdData || []).map(c => c.id));
+
     // Get the highest existing lottery order
     const { data: maxOrderData } = await supabase
       .from('sign_ups')
@@ -50,8 +63,7 @@ export async function POST(request: Request) {
       let tickets = 1; // Base ticket for being checked in
 
       // Early bird bonus (first 5 sign-ups based on original signup order)
-      const earlyBirdIndex = allComedians.findIndex(com => com.id === c.id);
-      if (earlyBirdIndex < 5) tickets += 2;
+      if (earlyBirdIds.has(c.id)) tickets += 2;
 
       // Early check-in bonus
       if (c.check_in_status === 'early') tickets += 2;
@@ -68,17 +80,17 @@ export async function POST(request: Request) {
     });
 
     // Select up to 4 comedians total
-    const selected: string[] = [];
+    const lotteryWinners: string[] = [];
     const selectedIds = new Set<string>();
     const numToSelect = Math.min(4, allComedians.length);
 
     // Draw from the weighted lottery pool (on-time/early people)
-    while (selected.length < numToSelect && lotteryPool.length > 0) {
+    while (lotteryWinners.length < numToSelect && lotteryPool.length > 0) {
       const randomIndex = Math.floor(Math.random() * lotteryPool.length);
       const selectedId = lotteryPool[randomIndex];
 
       if (!selectedIds.has(selectedId)) {
-        selected.push(selectedId);
+        lotteryWinners.push(selectedId);
         selectedIds.add(selectedId);
         // Remove all instances of this ID from the pool
         for (let i = lotteryPool.length - 1; i >= 0; i--) {
@@ -88,6 +100,16 @@ export async function POST(request: Request) {
         }
       }
     }
+
+    // The draw decides WHO wins; signup order decides their position in the list, so
+    // earlier signups rank higher rather than appearing in random draw order.
+    lotteryWinners.sort((a, b) => {
+      const ca = lotteryEligible.find(c => c.id === a)!;
+      const cb = lotteryEligible.find(c => c.id === b)!;
+      return new Date(ca.created_at).getTime() - new Date(cb.created_at).getTime();
+    });
+
+    const selected: string[] = [...lotteryWinners];
 
     // Then, fill remaining slots with late people (in order of lateness)
     for (const lateComedian of lateComedians) {
