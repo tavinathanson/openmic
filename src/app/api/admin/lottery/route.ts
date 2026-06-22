@@ -3,8 +3,8 @@ import { createServiceRoleClient } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
-    const { activeDateId, password } = await request.json();
-    
+    const { activeDateId, password, dryRun } = await request.json();
+
     if (password !== 'tavi') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -117,8 +117,14 @@ export async function POST(request: Request) {
       selected.push(lateComedian.id);
     }
 
+    // In dry-run mode, return the picks without writing them so the admin can
+    // preview/edit a draft before publishing it to the public list.
+    if (dryRun) {
+      return NextResponse.json({ selectedIds: selected });
+    }
+
     // Update lottery orders
-    const updates = selected.map((id, index) => 
+    const updates = selected.map((id, index) =>
       supabase
         .from('sign_ups')
         .update({ lottery_order: nextOrder + index })

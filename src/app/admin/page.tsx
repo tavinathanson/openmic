@@ -27,6 +27,8 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [draftIds, setDraftIds] = useState<string[] | null>(null);
+  const [addQuery, setAddQuery] = useState('');
 
   const copyNames = async () => {
     const names = comedians.map(c => c.email).filter(Boolean).join(', ');
@@ -174,23 +176,70 @@ export default function AdminPage() {
     setLoading(false);
   };
 
+  // Run the draw without writing it, so the picks land in an editable draft
+  // instead of going straight to the public list.
   const generateNext4 = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/lottery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activeDateId, password: 'tavi' })
+        body: JSON.stringify({ activeDateId, password: 'tavi', dryRun: true })
       });
-      
+
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         setError(data.error || 'Lottery generation failed');
       } else {
-        await loadComedians();
+        setDraftIds(data.selectedIds || []);
+        setAddQuery('');
       }
     } catch {
       setError('Lottery generation failed');
+    }
+    setLoading(false);
+  };
+
+  const moveDraft = (index: number, direction: -1 | 1) => {
+    setDraftIds(prev => {
+      if (!prev) return prev;
+      const target = index + direction;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const removeFromDraft = (id: string) => {
+    setDraftIds(prev => (prev ? prev.filter(x => x !== id) : prev));
+  };
+
+  const addToDraft = (id: string) => {
+    setDraftIds(prev => (prev && !prev.includes(id) ? [...prev, id] : prev));
+    setAddQuery('');
+  };
+
+  const publishDraft = async () => {
+    if (!draftIds || draftIds.length === 0) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/lottery/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activeDateId, comedianIds: draftIds, password: 'tavi' })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Failed to publish');
+      } else {
+        setDraftIds(null);
+        setAddQuery('');
+        await loadComedians();
+      }
+    } catch {
+      setError('Failed to publish');
     }
     setLoading(false);
   };
@@ -218,11 +267,25 @@ export default function AdminPage() {
   }
 
   const selectedComedians = comedians.filter(c => c.lottery_order).sort((a, b) => a.lottery_order! - b.lottery_order!);
-  const eligibleComedians = comedians.filter(c => 
-    !c.lottery_order && 
-    c.check_in_status && 
+  const eligibleComedians = comedians.filter(c =>
+    !c.lottery_order &&
+    c.check_in_status &&
     c.check_in_status !== 'not_coming'
   );
+
+  const comedianById = (id: string) => comedians.find(c => c.id === id);
+  const draftComedians = (draftIds || []).map(comedianById).filter(Boolean) as Comedian[];
+  const addCandidates =
+    draftIds === null || !addQuery.trim()
+      ? []
+      : comedians
+          .filter(c =>
+            !c.lottery_order &&
+            !draftIds.includes(c.id) &&
+            c.check_in_status !== 'not_coming' &&
+            c.full_name.toLowerCase().includes(addQuery.trim().toLowerCase())
+          )
+          .slice(0, 8);
 
   return (
     <main className="min-h-screen py-20 px-4 sm:px-6 lg:px-8 bg-sky-50/50">
@@ -271,13 +334,113 @@ export default function AdminPage() {
           </form>
         </div>
 
-        <button 
-          onClick={generateNext4}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl text-lg font-bold hover:from-purple-700 hover:to-pink-700 transition-all shadow-md disabled:opacity-50"
-          disabled={loading || eligibleComedians.length === 0}
-        >
-          🎲 Generate Next {Math.min(4, eligibleComedians.length)} Comics
-        </button>
+        {draftIds === null ? (
+          <button
+            onClick={generateNext4}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl text-lg font-bold hover:from-purple-700 hover:to-pink-700 transition-all shadow-md disabled:opacity-50"
+            disabled={loading || eligibleComedians.length === 0}
+          >
+            🎲 Generate Next {Math.min(4, eligibleComedians.length)} Comics
+          </button>
+        ) : (
+          <div className="bg-card rounded-xl p-6 shadow-sm border-2 border-purple-400">
+            <div className="flex justify-between items-center mb-1">
+              <h2 className="text-xl font-semibold text-purple-700">Draft — Next Up</h2>
+              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">Not posted yet</span>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">Reorder, remove, or add anyone, then publish to the list.</p>
+
+            <div className="space-y-2">
+              {draftComedians.map((c, index) => (
+                <div key={c.id} className="bg-purple-50 text-purple-900 rounded-md p-3 font-medium flex items-center justify-between">
+                  <span>
+                    {index + 1}. {c.full_name}
+                    {c.first_mic_ever && <span className="ml-1">🍪</span>}
+                    {c.plus_one && <span className="ml-1">⊕</span>}
+                    {!c.check_in_status && <span className="ml-2 text-xs text-gray-400">(not checked in)</span>}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => moveDraft(index, -1)}
+                      disabled={index === 0 || loading}
+                      className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      onClick={() => moveDraft(index, 1)}
+                      disabled={index === draftComedians.length - 1 || loading}
+                      className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      onClick={() => removeFromDraft(c.id)}
+                      disabled={loading}
+                      className="w-8 h-8 flex items-center justify-center bg-white border border-red-300 text-red-600 rounded hover:bg-red-50 disabled:opacity-30"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {draftComedians.length === 0 && (
+                <p className="text-sm text-gray-400 py-2">No one in the draft. Add someone below or discard.</p>
+              )}
+            </div>
+
+            <div className="relative mt-4">
+              <input
+                type="text"
+                value={addQuery}
+                onChange={(e) => setAddQuery(e.target.value)}
+                placeholder="Add someone… (type a name)"
+                className="w-full px-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={loading}
+              />
+              {addCandidates.length > 0 && (
+                <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
+                  {addCandidates.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => addToDraft(c.id)}
+                      className="w-full text-left px-4 py-2 hover:bg-purple-50 flex items-center justify-between"
+                    >
+                      <span>{c.full_name}</span>
+                      <span className="text-xs text-gray-400">
+                        {c.check_in_status ? c.check_in_status.replace('_', ' ') : 'not checked in'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={publishDraft}
+                disabled={loading || draftComedians.length === 0}
+                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-md font-bold hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                ✅ Publish {draftComedians.length} to List
+              </button>
+              <button
+                onClick={generateNext4}
+                disabled={loading}
+                className="bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                🎲 Redraw
+              </button>
+              <button
+                onClick={() => { setDraftIds(null); setAddQuery(''); }}
+                disabled={loading}
+                className="bg-white border border-red-300 text-red-600 px-4 py-3 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        )}
 
 {(selectedComedians.length > 0 || eligibleComedians.length > 0) && (
           <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
