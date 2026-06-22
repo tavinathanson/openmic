@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase';
-import { signRlsJwt } from '@/lib/jwt';
-import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
-import { sendCancellationNotification, sendEmailErrorNotification, sendWaitlistPromotionEmail } from '@/lib/resend';
+import { getActiveOpenMicDate } from '@/lib/repos/dates';
+import { getPersonByEmail } from '@/lib/repos/people';
+import { getSignupForDate } from '@/lib/repos/signups';
+import { cancelSignup, promoteNextWaitlisted } from '@/lib/repos/cancellations';
+import {
+  sendCancellationNotification,
+  sendEmailErrorNotification,
+  sendWaitlistPromotionEmail,
+} from '@/lib/resend';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -12,208 +16,70 @@ export async function GET(request: Request) {
   const note = searchParams.get('note');
 
   try {
-    const supabase = await createServerSupabaseClient();
-
-    // Get the active open mic date
     let activeDate;
     try {
-      activeDate = await getActiveOpenMicDate(supabase);
+      activeDate = await getActiveOpenMicDate();
     } catch {
-      return NextResponse.json(
-        { error: 'No active open mic date found' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No active open mic date found' }, { status: 400 });
     }
 
+    // Resolve which signup to cancel: directly by id (from the email link), or by
+    // looking up the person's signup for the active date.
     let signupId: string;
-    let personEmail: string | undefined;
-    let personName: string | null | undefined;
-    let signupType: 'comedian' | 'audience' | undefined;
-
     if (id) {
-      // If ID is provided, use it directly
       signupId = id;
-
-      // Get person data and signup type from database for notification
-      // Use service role client to bypass RLS for admin notification purposes
-      const serviceClient = createServiceRoleClient();
-      const { data: signupData, error: signupFetchError } = await serviceClient
-        .from('sign_ups')
-        .select('person_id, signup_type')
-        .eq('id', id)
-        .single();
-
-      if (signupFetchError) {
-        console.error('Failed to fetch signup data for notification:', signupFetchError);
-      }
-
-      if (signupData) {
-        signupType = signupData.signup_type;
-
-        const { data: personData, error: personFetchError } = await serviceClient
-          .from('people')
-          .select('email, full_name')
-          .eq('id', signupData.person_id)
-          .single();
-
-        if (personFetchError) {
-          console.error('Failed to fetch person data for notification:', personFetchError);
-        }
-
-        if (personData) {
-          personEmail = personData.email;
-          personName = personData.full_name;
-        }
-      }
     } else if (email) {
-      // If email is provided, look up the signup
-      const emailToken = signRlsJwt({ email });
-      const supabaseEmail = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        { global: { headers: { Authorization: `Bearer ${emailToken}` } } }
-      );
-
-      const personData = await getPersonByEmail(supabaseEmail, email);
-      if (!personData) {
-        return NextResponse.json(
-          { error: 'No signup found for this email' },
-          { status: 404 }
-        );
+      const person = await getPersonByEmail(email);
+      const signup = person ? await getSignupForDate(person.id, activeDate.id) : null;
+      if (!signup) {
+        return NextResponse.json({ error: 'No signup found for this email' }, { status: 404 });
       }
-
-      personEmail = personData.email;
-      personName = personData.full_name;
-
-      // Get the signup for this person and date
-      const signupToken = signRlsJwt({
-        person_id: personData.id,
-        open_mic_date_id: activeDate.id,
-      });
-      const supabaseSignup = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        { global: { headers: { Authorization: `Bearer ${signupToken}` } } }
-      );
-
-      const { data: signupData, error: signupError } = await supabaseSignup
-        .from('sign_ups')
-        .select('*')
-        .eq('person_id', personData.id)
-        .eq('open_mic_date_id', activeDate.id)
-        .single();
-
-      if (signupError || !signupData) {
-        return NextResponse.json(
-          { error: 'No signup found for this email' },
-          { status: 404 }
-        );
-      }
-
-      signupId = signupData.id;
-      signupType = signupData.signup_type;
+      signupId = signup.id;
     } else {
-      return NextResponse.json(
-        { error: 'Missing required parameters' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
-    // Mint a JWT containing the signup_id so RLS can authorize this delete
-    const deleteToken = signRlsJwt({ id: signupId });
-    const supabaseDelete = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { global: { headers: { Authorization: `Bearer ${deleteToken}` } } }
-    );
+    // Logs to cancellation_history and deletes, atomically.
+    const cancelled = await cancelSignup(signupId);
+    if (!cancelled) {
+      return NextResponse.json({ error: 'No signup found' }, { status: 404 });
+    }
 
-    // First verify the row exists
-    const { error: selectError } = await supabaseDelete
-      .from('sign_ups')
-      .select('*')
-      .eq('id', signupId)
-      .single();
-    
-    if (selectError) throw selectError;
-    
-    // Perform the delete through the JWT-authenticated client
-    const { error } = await supabaseDelete
-      .from('sign_ups')
-      .delete()
-      .eq('id', signupId);
-
-    if (error) throw error;
-
-    // Send cancellation notification to Tavi
-    if (personEmail && signupType) {
+    // Notify the organizer (best effort).
+    if (cancelled.email) {
       try {
         await sendCancellationNotification(
-          personEmail,
-          personName || 'Unknown',
-          signupType,
+          cancelled.email,
+          cancelled.full_name || 'Unknown',
+          cancelled.signup_type as 'comedian' | 'audience',
           note || undefined
         );
       } catch (emailError) {
         console.error('Failed to send cancellation notification:', emailError);
-        // Notify Tavi about the email failure
-        await sendEmailErrorNotification(
-          personEmail,
-          'cancellation',
-          emailError,
-          {
-            fullName: personName || 'Unknown',
-            type: signupType,
-            date: activeDate.date
-          }
-        );
-        // Don't throw - we still want to return success since the cancellation worked
+        await sendEmailErrorNotification(cancelled.email, 'cancellation', emailError, {
+          fullName: cancelled.full_name || 'Unknown',
+          type: cancelled.signup_type,
+          date: activeDate.date,
+        });
       }
     }
 
-    // Auto-promote next waitlisted comedian if a comedian just cancelled
-    if (signupType === 'comedian') {
+    // Auto-promote the next waitlisted comedian when a comedian cancels.
+    if (cancelled.signup_type === 'comedian') {
       try {
-        const serviceClient = createServiceRoleClient();
-
-        // Find the oldest waitlisted comedian for this date
-        const { data: nextWaitlisted } = await serviceClient
-          .from('sign_ups')
-          .select('id, person_id')
-          .eq('open_mic_date_id', activeDate.id)
-          .eq('signup_type', 'comedian')
-          .eq('is_waitlist', true)
-          .order('created_at', { ascending: true })
-          .limit(1)
-          .single();
-
-        if (nextWaitlisted) {
-          // Promote them off the waitlist
-          await serviceClient
-            .from('sign_ups')
-            .update({ is_waitlist: false })
-            .eq('id', nextWaitlisted.id);
-
-          // Get their email to notify them
-          const { data: promotedPerson } = await serviceClient
-            .from('people')
-            .select('email, full_name')
-            .eq('id', nextWaitlisted.person_id)
-            .single();
-
-          if (promotedPerson?.email) {
-            const eventDate = new Date(activeDate.date + 'T00:00:00');
-            await sendWaitlistPromotionEmail(
-              promotedPerson.email,
-              nextWaitlisted.id,
-              eventDate,
-              activeDate.time,
-              activeDate.timezone
-            );
-            console.log(`Promoted ${promotedPerson.full_name || promotedPerson.email} off waitlist`);
-          }
+        const promoted = await promoteNextWaitlisted(activeDate.id);
+        if (promoted?.email) {
+          const eventDate = new Date(activeDate.date + 'T00:00:00');
+          await sendWaitlistPromotionEmail(
+            promoted.email,
+            promoted.id,
+            eventDate,
+            activeDate.time,
+            activeDate.timezone
+          );
+          console.log(`Promoted ${promoted.full_name || promoted.email} off waitlist`);
         }
       } catch (promoteError) {
-        // Log but don't fail the cancellation
         console.error('Failed to auto-promote from waitlist:', promoteError);
       }
     }
@@ -221,9 +87,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Cancellation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to cancel signup' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to cancel signup' }, { status: 500 });
   }
-} 
+}

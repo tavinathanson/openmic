@@ -31,7 +31,24 @@ function createDb(): Kysely<Database> {
   return new Kysely<Database>({ dialect: new PostgresDialect({ pool }) });
 }
 
-// Reuse one instance across hot reloads / serverless invocations.
+// Lazily build the Kysely instance on first query and reuse it across hot reloads /
+// serverless invocations. Lazy init keeps `next build` from needing DATABASE_URL.
 const globalForDb = globalThis as unknown as { __openmicDb?: Kysely<Database> };
-export const db: Kysely<Database> = globalForDb.__openmicDb ?? createDb();
-if (process.env.NODE_ENV !== 'production') globalForDb.__openmicDb = db;
+
+function getDb(): Kysely<Database> {
+  if (!globalForDb.__openmicDb) globalForDb.__openmicDb = createDb();
+  return globalForDb.__openmicDb;
+}
+
+export const db = new Proxy({} as Kysely<Database>, {
+  get(_target, prop, receiver) {
+    const real = getDb();
+    const value = Reflect.get(real as object, prop, receiver);
+    return typeof value === 'function' ? value.bind(real) : value;
+  },
+});
+
+/** True for a Postgres unique-constraint violation (e.g. duplicate signup). */
+export function isUniqueViolation(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as { code?: string }).code === '23505';
+}

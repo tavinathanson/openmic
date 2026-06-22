@@ -1,167 +1,92 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET } from './route';
 
-// Mock all dependencies
-vi.mock('@/lib/supabase', () => ({
-  createServerSupabaseClient: vi.fn(),
-  createServiceRoleClient: vi.fn()
-}));
-
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn()
-}));
-
-vi.mock('@/lib/jwt', () => ({
-  signRlsJwt: vi.fn(() => 'mock-jwt-token')
-}));
-
-vi.mock('@/lib/openMic', () => ({
+vi.mock('@/lib/repos/dates', () => ({
   getActiveOpenMicDate: vi.fn(),
-  getPersonByEmail: vi.fn()
+}));
+
+vi.mock('@/lib/repos/people', () => ({
+  getPersonByEmail: vi.fn(),
+}));
+
+vi.mock('@/lib/repos/signups', () => ({
+  getSignupForDate: vi.fn(),
+}));
+
+vi.mock('@/lib/repos/cancellations', () => ({
+  cancelSignup: vi.fn(),
+  promoteNextWaitlisted: vi.fn(),
 }));
 
 vi.mock('@/lib/resend', () => ({
   sendCancellationNotification: vi.fn(),
-  sendEmailErrorNotification: vi.fn()
+  sendEmailErrorNotification: vi.fn(),
+  sendWaitlistPromotionEmail: vi.fn(),
 }));
 
-import { createClient } from '@supabase/supabase-js';
-import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase';
-import { getActiveOpenMicDate, getPersonByEmail } from '@/lib/openMic';
+import { getActiveOpenMicDate } from '@/lib/repos/dates';
+import { getPersonByEmail } from '@/lib/repos/people';
+import { getSignupForDate } from '@/lib/repos/signups';
+import { cancelSignup, promoteNextWaitlisted } from '@/lib/repos/cancellations';
 import { sendCancellationNotification } from '@/lib/resend';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type MockSupabaseClient = any;
+const mockActiveDate = {
+  id: 'date-123',
+  date: '2025-11-25',
+  time: '19:30:00',
+  timezone: 'America/New_York',
+  is_active: true,
+  created_at: '2025-01-01T00:00:00.000Z',
+};
+
+const mockCancelled = {
+  signup_type: 'comedian' as const,
+  email: 'comedian@example.com',
+  full_name: 'Test Comedian',
+};
 
 describe('Cancel API Route', () => {
-  const mockActiveDate = { id: 'date-123', date: '2025-11-25' };
-  const mockSignup = {
-    id: 'signup-123',
-    person_id: 'person-123',
-    signup_type: 'comedian'
-  };
-  const mockPerson = {
-    id: 'person-123',
-    email: 'comedian@example.com',
-    full_name: 'Test Comedian'
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Setup default mock implementations
-    vi.mocked(createServerSupabaseClient).mockResolvedValue({} as MockSupabaseClient);
     vi.mocked(getActiveOpenMicDate).mockResolvedValue(mockActiveDate);
+    vi.mocked(promoteNextWaitlisted).mockResolvedValue(null);
     vi.mocked(sendCancellationNotification).mockResolvedValue(undefined);
   });
 
   describe('Cancellation by ID', () => {
-    it('successfully cancels signup with id and type', async () => {
-      // Mock service role client for fetching signup and person data
-      const mockServiceClient = {
-        from: vi.fn((table: string) => {
-          if (table === 'sign_ups') {
-            return {
-              select: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  single: vi.fn().mockResolvedValue({ data: mockSignup, error: null })
-                }))
-              }))
-            };
-          } else if (table === 'people') {
-            return {
-              select: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  single: vi.fn().mockResolvedValue({ data: mockPerson, error: null })
-                }))
-              }))
-            };
-          }
-          return {};
-        })
-      };
+    it('successfully cancels signup with id', async () => {
+      vi.mocked(cancelSignup).mockResolvedValue(mockCancelled);
 
-      vi.mocked(createServiceRoleClient).mockReturnValue(mockServiceClient as MockSupabaseClient);
-
-      // Mock authenticated client for delete operation
-      vi.mocked(createClient).mockReturnValue({
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              single: vi.fn().mockResolvedValue({ data: mockSignup, error: null })
-            }))
-          })),
-          delete: vi.fn(() => ({
-            eq: vi.fn().mockResolvedValue({ error: null })
-          }))
-        }))
-      } as MockSupabaseClient);
-
-      const request = new Request('http://localhost/api/cancel?id=signup-123&type=comedian');
+      const request = new Request('http://localhost/api/cancel?id=signup-123');
       const response = await GET(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
+      expect(cancelSignup).toHaveBeenCalledWith('signup-123');
       expect(sendCancellationNotification).toHaveBeenCalledWith(
-        mockPerson.email,
-        mockPerson.full_name,
-        mockSignup.signup_type,
+        mockCancelled.email,
+        mockCancelled.full_name,
+        mockCancelled.signup_type,
         undefined
       );
     });
 
     it('successfully cancels signup with note', async () => {
-      // Mock service role client for fetching signup and person data
-      const mockServiceClient = {
-        from: vi.fn((table: string) => {
-          if (table === 'sign_ups') {
-            return {
-              select: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  single: vi.fn().mockResolvedValue({ data: mockSignup, error: null })
-                }))
-              }))
-            };
-          } else if (table === 'people') {
-            return {
-              select: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  single: vi.fn().mockResolvedValue({ data: mockPerson, error: null })
-                }))
-              }))
-            };
-          }
-          return {};
-        })
-      };
+      vi.mocked(cancelSignup).mockResolvedValue(mockCancelled);
 
-      vi.mocked(createServiceRoleClient).mockReturnValue(mockServiceClient as MockSupabaseClient);
-
-      // Mock authenticated client for delete operation
-      vi.mocked(createClient).mockReturnValue({
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              single: vi.fn().mockResolvedValue({ data: mockSignup, error: null })
-            }))
-          })),
-          delete: vi.fn(() => ({
-            eq: vi.fn().mockResolvedValue({ error: null })
-          }))
-        }))
-      } as MockSupabaseClient);
-
-      const request = new Request('http://localhost/api/cancel?id=signup-123&type=comedian&note=Schedule%20conflict');
+      const request = new Request(
+        'http://localhost/api/cancel?id=signup-123&note=Schedule%20conflict'
+      );
       const response = await GET(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(sendCancellationNotification).toHaveBeenCalledWith(
-        mockPerson.email,
-        mockPerson.full_name,
-        mockSignup.signup_type,
+        mockCancelled.email,
+        mockCancelled.full_name,
+        mockCancelled.signup_type,
         'Schedule conflict'
       );
     });
@@ -169,42 +94,14 @@ describe('Cancel API Route', () => {
 
   describe('Cancellation by Email', () => {
     it('successfully cancels signup with email', async () => {
-      vi.mocked(getPersonByEmail).mockResolvedValue(mockPerson);
-
-      // createClient is called 3 times with different JWT tokens:
-      // 1. For person email lookup (passed to getPersonByEmail - we mock the response above)
-      // 2. For signup fetch (needs .eq().eq() chain)
-      // 3. For delete operation (needs .eq() single chain)
-
-      // First call: email client (for getPersonByEmail)
-      vi.mocked(createClient).mockReturnValueOnce({} as MockSupabaseClient);
-
-      // Second call: signup client (needs two .eq() calls)
-      vi.mocked(createClient).mockReturnValueOnce({
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                single: vi.fn().mockResolvedValue({ data: mockSignup, error: null })
-              }))
-            }))
-          }))
-        }))
-      } as MockSupabaseClient);
-
-      // Third call: delete client (needs single .eq() and delete)
-      vi.mocked(createClient).mockReturnValueOnce({
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              single: vi.fn().mockResolvedValue({ data: mockSignup, error: null })
-            }))
-          })),
-          delete: vi.fn(() => ({
-            eq: vi.fn().mockResolvedValue({ error: null })
-          }))
-        }))
-      } as MockSupabaseClient);
+      vi.mocked(getPersonByEmail).mockResolvedValue({
+        id: 'person-123',
+        email: 'comedian@example.com',
+        full_name: 'Test Comedian',
+        created_at: '2025-01-01T00:00:00.000Z',
+      });
+      vi.mocked(getSignupForDate).mockResolvedValue({ id: 'signup-123' } as never);
+      vi.mocked(cancelSignup).mockResolvedValue(mockCancelled);
 
       const request = new Request('http://localhost/api/cancel?email=comedian@example.com');
       const response = await GET(request);
@@ -212,6 +109,7 @@ describe('Cancel API Route', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
+      expect(cancelSignup).toHaveBeenCalledWith('signup-123');
     });
 
     it('returns 404 when email not found', async () => {
@@ -230,7 +128,7 @@ describe('Cancel API Route', () => {
     it('returns 400 when no active open mic date found', async () => {
       vi.mocked(getActiveOpenMicDate).mockRejectedValue(new Error('No active date'));
 
-      const request = new Request('http://localhost/api/cancel?id=signup-123&type=comedian');
+      const request = new Request('http://localhost/api/cancel?id=signup-123');
       const response = await GET(request);
       const data = await response.json();
 
@@ -247,49 +145,11 @@ describe('Cancel API Route', () => {
       expect(data.error).toBe('Missing required parameters');
     });
 
-    it('returns 500 when delete operation fails', async () => {
+    it('returns 500 when cancel operation fails', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      // Mock service role client for fetching signup and person data
-      const mockServiceClient = {
-        from: vi.fn((table: string) => {
-          if (table === 'sign_ups') {
-            return {
-              select: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  single: vi.fn().mockResolvedValue({ data: mockSignup, error: null })
-                }))
-              }))
-            };
-          } else if (table === 'people') {
-            return {
-              select: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  single: vi.fn().mockResolvedValue({ data: mockPerson, error: null })
-                }))
-              }))
-            };
-          }
-          return {};
-        })
-      };
+      vi.mocked(cancelSignup).mockRejectedValue(new Error('DB error'));
 
-      vi.mocked(createServiceRoleClient).mockReturnValue(mockServiceClient as MockSupabaseClient);
-
-      // Mock authenticated client for delete operation that fails
-      vi.mocked(createClient).mockReturnValue({
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              single: vi.fn().mockResolvedValue({ data: mockSignup, error: null })
-            }))
-          })),
-          delete: vi.fn(() => ({
-            eq: vi.fn().mockResolvedValue({ error: new Error('DB error') })
-          }))
-        }))
-      } as MockSupabaseClient);
-
-      const request = new Request('http://localhost/api/cancel?id=signup-123&type=comedian');
+      const request = new Request('http://localhost/api/cancel?id=signup-123');
       const response = await GET(request);
       const data = await response.json();
 

@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { getActiveOpenMicDate } from '@/lib/openMic';
+import { fetchSlots as fetchSlotsApi } from '@/utils/activeDate';
 
 // Create a ref to share the isFull state
 export const slotsFullRef = { current: false };
@@ -15,44 +14,29 @@ export default function SlotCounter() {
   const [currentDate, setCurrentDate] = useState<string | null>(null);
   const [isFull, setIsFull] = useState(false);
   const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
-  const supabase = createClient();
 
   useEffect(() => {
     async function fetchSlots() {
-      let dateData;
-      try {
-        dateData = await getActiveOpenMicDate(supabase);
-      } catch {
+      const { activeDate, count } = await fetchSlotsApi();
+      if (!activeDate) {
         setRemainingSlots(0);
         setCurrentDate(null);
         return;
       }
 
-      // Format the date with UTC timezone
-      const dateObj = new Date(dateData.date + 'T00:00:00');
+      // Format the date with UTC timezone to prevent timezone shifts
+      const dateObj = new Date(activeDate.date + 'T00:00:00');
       const formattedDate = dateObj.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-        timeZone: 'UTC' // Use UTC to prevent timezone shifts
+        timeZone: 'UTC',
       });
       setCurrentDate(formattedDate);
 
-      // Get the count of comedian signups for this date from the view
-      const { data: comedianCount, error: countError } = await supabase
-        .rpc('get_comedian_signup_count', { p_date_id: dateData.id });
-
-      if (countError) {
-        console.error('Error fetching comedian count:', countError);
-        setRemainingSlots(maxSlots); // Assume max slots if count fails
-        return;
-      }
-
-      const currentCount = comedianCount ?? 0;
-      
-      setRemainingSlots(maxSlots - currentCount);
-      const newIsFull = currentCount >= maxSlots;
+      setRemainingSlots(maxSlots - count);
+      const newIsFull = count >= maxSlots;
       setIsFull(newIsFull);
       slotsFullRef.current = newIsFull;
     }
@@ -72,19 +56,10 @@ export default function SlotCounter() {
       });
     };
 
-    // Subscribe to changes on the view or underlying table
-    const subscription = supabase
-      .channel('comedian_signup_count_changes') // Use a unique channel name
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sign_ups' }, () => {
-        // Re-fetch when sign_ups changes, as the view depends on it
-        fetchSlots();
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase, maxSlots]);
+    // Poll for updates (replaces the old Supabase realtime subscription).
+    const interval = setInterval(fetchSlots, 10000);
+    return () => clearInterval(interval);
+  }, [maxSlots]);
 
   if (!currentDate) return null;
 

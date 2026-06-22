@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import validator from 'email-validator';
 import { slotsFullRef, decrementSlotRef } from './SlotCounter';
 import { trackRegistration } from '@/utils/metaPixel';
-import { createClient } from '@/utils/supabase/client';
-import { getActiveOpenMicDate, isComedianSignupWindowOpen, getComedianSignupOpenDate } from '@/lib/openMic';
+import { fetchActiveDate } from '@/utils/activeDate';
+import { isComedianSignupWindowOpen, getComedianSignupOpenDate } from '@/lib/openMic';
 
 type SignupType = 'comedian' | 'audience';
 
@@ -67,8 +67,11 @@ export default function SignupForm() {
   useEffect(() => {
     async function checkSignupWindow() {
       try {
-        const supabase = createClient();
-        const data = await getActiveOpenMicDate(supabase);
+        const data = await fetchActiveDate();
+        if (!data) {
+          setComedianWindowOpen(true);
+          return;
+        }
         const isOpen = isComedianSignupWindowOpen(data.date);
         setComedianWindowOpen(isOpen);
 
