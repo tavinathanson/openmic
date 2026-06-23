@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { createServiceRoleClient } from '../src/lib/supabase';
+import { db } from '../src/lib/db';
 import { format, subDays } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
@@ -119,8 +119,6 @@ async function createDateSheet(date: string, newEmails: string[][]): Promise<voi
 async function syncComedianEmails() {
   console.log('Starting comedian email sync...');
   
-  const supabase = createServiceRoleClient();
-  
   // Get yesterday's date in EST/EDT (where the open mics happen)
   // This ensures we check the right date regardless of where the server runs
   const nowInEastern = toZonedTime(new Date(), 'America/New_York');
@@ -130,13 +128,13 @@ async function syncComedianEmails() {
   console.log(`Looking for open mic date: ${yesterdayStr} (Eastern Time)`);
   
   // Check if there was an open mic yesterday
-  const { data: openMicDate, error: dateError } = await supabase
-    .from('open_mic_dates')
-    .select('id, date')
-    .eq('date', yesterdayStr)
-    .single();
-    
-  if (dateError || !openMicDate) {
+  const openMicDate = await db
+    .selectFrom('open_mic_dates')
+    .select(['id', 'date'])
+    .where('date', '=', yesterdayStr)
+    .executeTakeFirst();
+
+  if (!openMicDate) {
     console.log('No open mic date found for yesterday. Skipping sync.');
     return;
   }
@@ -148,28 +146,21 @@ async function syncComedianEmails() {
   console.log(`Found ${existingEmails.size} existing emails in the main sheet`);
   
   // Get all comedian signups for yesterday's open mic
-  const { data: signups, error: signupError } = await supabase
-    .from('sign_ups')
-    .select('*, people!inner(email, full_name)')
-    .eq('signup_type', 'comedian')
-    .eq('open_mic_date_id', openMicDate.id)
-    .order('created_at', { ascending: true });
-  
-  if (signupError) {
-    console.error('Error fetching comedians from database:', signupError);
-    process.exit(1);
-  }
-  
+  const signups = await db
+    .selectFrom('sign_ups')
+    .innerJoin('people', 'people.id', 'sign_ups.person_id')
+    .select(['people.email as email', 'people.full_name as full_name'])
+    .where('sign_ups.signup_type', '=', 'comedian')
+    .where('sign_ups.open_mic_date_id', '=', openMicDate.id)
+    .orderBy('sign_ups.created_at', 'asc')
+    .execute();
+
   // Filter for new emails only
   const newEmails = [];
-  for (const signup of signups || []) {
-    // Type assertion to handle the join result
-    const person = signup.people as { email: string; full_name: string | null } | { email: string; full_name: string | null }[];
-    // Handle both single object and array cases from Supabase join
-    const personData = Array.isArray(person) ? person[0] : person;
-    const email = personData?.email;
+  for (const signup of signups) {
+    const email = signup.email;
     if (email && !existingEmails.has(email.toLowerCase().trim())) {
-      newEmails.push([email, personData?.full_name || '']);
+      newEmails.push([email, signup.full_name || '']);
     }
   }
   
