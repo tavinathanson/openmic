@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
-import { signRlsJwt } from '@/lib/jwt';
-import { sendConfirmationEmail, sendWaitlistEmail, sendEmailErrorNotification } from '@/lib/resend';
 import { parseISO } from 'date-fns';
-import { getActiveOpenMicDate, isComedianSignupWindowOpen } from '@/lib/openMic';
+import { getActiveOpenMicDate } from '@/lib/repos/dates';
+import { getOrCreatePersonId } from '@/lib/repos/people';
+import { countComedians, createSignup, getSignupForDate } from '@/lib/repos/signups';
+import { isUniqueViolation } from '@/lib/db';
+import { isComedianSignupWindowOpen } from '@/lib/openMic';
+import { sendConfirmationEmail, sendWaitlistEmail, sendEmailErrorNotification } from '@/lib/resend';
 
 export async function POST(request: Request) {
   let email: string | undefined;
   let type: string | undefined;
   let full_name: string | undefined;
   try {
-    const supabase = await createServerSupabaseClient();
     const body = await request.json();
     email = body.email;
     type = body.type;
@@ -19,31 +19,21 @@ export async function POST(request: Request) {
     const { number_of_people, first_mic_ever, will_support } = body;
 
     if (!email || !type) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     if (type !== 'comedian' && type !== 'audience') {
-      return NextResponse.json(
-        { error: 'Invalid type' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
     }
 
-    // Get active date (or return 400)
     let activeDate;
     try {
-      activeDate = await getActiveOpenMicDate(supabase);
+      activeDate = await getActiveOpenMicDate();
     } catch {
-      return NextResponse.json(
-        { error: 'No active open mic date found' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No active open mic date found' }, { status: 400 });
     }
 
-    // Check if comedian signup window is open (audience can sign up anytime)
+    // Comedians can only sign up once the window opens; audience can sign up anytime.
     if (type === 'comedian' && !isComedianSignupWindowOpen(activeDate.date)) {
       return NextResponse.json(
         { error: 'Comedian signups are not open yet for this date' },
@@ -51,242 +41,78 @@ export async function POST(request: Request) {
       );
     }
 
-    // Ensure person exists, creating if necessary using JWT-protected select
-    const emailToken = signRlsJwt({ email });
-    const supabaseEmail = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { global: { headers: { Authorization: `Bearer ${emailToken}` } } }
-    );
-    const { data: existingPerson, error: personError } = await supabaseEmail
-      .from('people')
-      .select('id')
-      .ilike('email', email)
-      .single();
-    if (personError && personError.code !== 'PGRST116') {
-      throw personError;
-    }
-    let personId: string;
-    if (!existingPerson) {
-      // Still need to use supabaseEmail to create the person, which is still relevant because we mint JWT tokens based on 
-      // the email even if one doesn't exist yet in the database. And our policy is to use JWT tokens.
-      const { data: newPerson, error: createError } = await supabaseEmail
-        .from('people')
-        .insert([{ email, full_name: full_name || null }])
-        .select()
-        .single();
-      if (createError) throw createError;
-      personId = newPerson.id;
-    } else {
-      personId = existingPerson.id;
+    const personId = await getOrCreatePersonId(email, full_name || null);
+
+    const existing = await getSignupForDate(personId, activeDate.id);
+    if (existing) {
+      return NextResponse.json({ error: 'You are already signed up for this date' }, { status: 400 });
     }
 
-    // Check if person is already signed up for this date using JWT-protected select
-    const signupToken = signRlsJwt({
-      person_id: personId,
-      open_mic_date_id: activeDate.id,
-    });
-    const supabaseSignup = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { global: { headers: { Authorization: `Bearer ${signupToken}` } } }
-    );
-    const { data: existingSignup, error: signupError } = await supabaseSignup
-      .from('sign_ups')
-      .select('*')
-      .eq('person_id', personId)
-      .eq('open_mic_date_id', activeDate.id)
-      .single();
-    if (signupError && signupError.code !== 'PGRST116') {
-      throw signupError;
-    }
-    if (existingSignup) {
-      return NextResponse.json(
-        { error: 'You are already signed up for this date' },
-        { status: 400 }
-      );
-    }
-
-    // Check if comedian slots are full for this date
+    // If comedian slots are full, sign up onto the waitlist instead.
+    let isWaitlist = false;
     if (type === 'comedian') {
-      const { data: comedianCount, error: countError } = await supabaseSignup
-        .rpc('get_comedian_signup_count', { p_date_id: activeDate.id });
-      if (countError) throw countError;
-      const maxSlots = parseInt(
-        process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20'
-      );
-      if ((comedianCount ?? 0) >= maxSlots) {
-        // Create waitlist signup instead
-        const { data: signupData, error: createSignupError } = await supabaseSignup
-          .from('sign_ups')
-          .insert([{
-            person_id: personId,
-            open_mic_date_id: activeDate.id,
-            number_of_people: number_of_people || 1,
-            first_mic_ever: first_mic_ever || false,
-            signup_type: type,
-            is_waitlist: true,
-            will_support: will_support || false,
-          }])
-          .select()
-          .single();
-
-        if (createSignupError) {
-      // Check if it's a unique constraint violation (duplicate signup)
-      if (createSignupError.code === '23505') {
-        return NextResponse.json(
-          { error: 'You are already signed up for this date' },
-          { status: 400 }
-        );
-      }
-      throw createSignupError;
+      const count = await countComedians(activeDate.id);
+      const maxSlots = parseInt(process.env.NEXT_PUBLIC_MAX_COMEDIAN_SLOTS || '20');
+      if (count >= maxSlots) isWaitlist = true;
     }
 
-        // Send waitlist confirmation email
-        try {
-          const { data: openMicDate, error: dateError } = await supabase
-            .from('open_mic_dates')
-            .select('date, time, timezone')
-            .eq('id', activeDate.id)
-            .single();
-          
-          if (dateError || !openMicDate) {
-            throw new Error('Failed to get open mic date');
-          }
-
-          const eventDate = parseISO(openMicDate.date);
-          if (isNaN(eventDate.getTime())) {
-            throw new Error('Invalid date format from database');
-          }
-
-          const [hours, minutes] = openMicDate.time.split(':');
-          const timeObj = new Date();
-          timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
-          
-          await sendWaitlistEmail(
-            email, 
-            signupData.id,
-            eventDate,
-            openMicDate.time,
-            openMicDate.timezone
-          );
-        } catch (emailError) {
-          console.error('Failed to send waitlist email:', emailError);
-          // Notify Tavi about the email failure
-          await sendEmailErrorNotification(
-            email,
-            'waitlist',
-            emailError,
-            {
-              fullName: full_name,
-              type: 'comedian',
-              date: activeDate.date
-            }
-          );
-        }
-
-        return NextResponse.json({ 
-          success: true,
-          is_waitlist: true,
-          message: 'You have been added to the waitlist!'
-        });
-      }
-    }
-
-    // Create the signup
-    const { data: signupData, error: createSignupError } = await supabaseSignup
-      .from('sign_ups')
-      .insert([{
-        person_id: personId,
-        open_mic_date_id: activeDate.id,
-        number_of_people: number_of_people || 1,
-        first_mic_ever: first_mic_ever || false,
-        signup_type: type,
-        will_support: will_support || false,
-      }])
-      .select()
-      .single();
-
-    if (createSignupError) {
-      // Check if it's a unique constraint violation (duplicate signup)
-      if (createSignupError.code === '23505') {
-        return NextResponse.json(
-          { error: 'You are already signed up for this date' },
-          { status: 400 }
-        );
-      }
-      throw createSignupError;
-    }
-
-    // Send confirmation email
+    let signup;
     try {
-      const { data: openMicDate, error: dateError } = await supabase
-        .from('open_mic_dates')
-        .select('date, time, timezone')
-        .eq('id', activeDate.id)
-        .single();
-      
-      if (dateError || !openMicDate) {
-        throw new Error('Failed to get open mic date');
+      signup = await createSignup({
+        personId,
+        dateId: activeDate.id,
+        numberOfPeople: number_of_people || 1,
+        firstMicEver: first_mic_ever || false,
+        signupType: type,
+        willSupport: will_support || false,
+        isWaitlist,
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        return NextResponse.json({ error: 'You are already signed up for this date' }, { status: 400 });
       }
+      throw err;
+    }
 
-      // Parse the date from the database
-      const eventDate = parseISO(openMicDate.date);
+    // Send confirmation/waitlist email — failures notify the organizer but don't fail the signup.
+    try {
+      const eventDate = parseISO(activeDate.date);
       if (isNaN(eventDate.getTime())) {
         throw new Error('Invalid date format from database');
       }
-
-      // Format the time from the database
-      const [hours, minutes] = openMicDate.time.split(':');
-      const timeObj = new Date();
-      timeObj.setHours(parseInt(hours), parseInt(minutes), 0);
-      
-      await sendConfirmationEmail(
-        email, 
-        type, 
-        signupData.id,
-        eventDate,
-        openMicDate.time,
-        openMicDate.timezone
-      );
+      if (isWaitlist) {
+        await sendWaitlistEmail(email, signup.id, eventDate, activeDate.time, activeDate.timezone);
+      } else {
+        await sendConfirmationEmail(email, type, signup.id, eventDate, activeDate.time, activeDate.timezone);
+      }
     } catch (emailError) {
-      console.error('Failed to send confirmation email:', emailError);
-      // Notify Tavi about the email failure
-      await sendEmailErrorNotification(
-        email,
-        'confirmation',
-        emailError,
-        {
-          fullName: full_name,
-          type,
-          date: activeDate.date
-        }
-      );
-      // Log the error but don't throw - we still want to return success since the signup worked
-      // The user can still attend even if they don't get the email
+      console.error('Failed to send signup email:', emailError);
+      await sendEmailErrorNotification(email, isWaitlist ? 'waitlist' : 'confirmation', emailError, {
+        fullName: full_name,
+        type,
+        date: activeDate.date,
+      });
     }
 
+    if (isWaitlist) {
+      return NextResponse.json({
+        success: true,
+        is_waitlist: true,
+        message: 'You have been added to the waitlist!',
+      });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Signup error:', error);
-    // Notify Tavi about the signup failure
     try {
-      await sendEmailErrorNotification(
-        email || 'unknown',
-        'signup_api_error',
-        error,
-        {
-          fullName: full_name || 'unknown',
-          type: type || 'unknown',
-          timestamp: new Date().toISOString()
-        }
-      );
+      await sendEmailErrorNotification(email || 'unknown', 'signup_api_error', error, {
+        fullName: full_name || 'unknown',
+        type: type || 'unknown',
+        timestamp: new Date().toISOString(),
+      });
     } catch {
       // Don't let notification failure mask the original error
     }
-    return NextResponse.json(
-      { error: 'Failed to process signup' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to process signup' }, { status: 500 });
   }
-} 
+}

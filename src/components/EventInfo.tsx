@@ -1,18 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { getActiveOpenMicDate } from '@/lib/openMic';
+import { fetchActiveDate } from '@/utils/activeDate';
 
 export default function EventInfo() {
   const [date, setDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     async function fetchDate() {
       try {
-        const data = await getActiveOpenMicDate(supabase);
+        const data = await fetchActiveDate();
+        if (!data) return;
 
         const dateObj = new Date(data.date + 'T00:00:00');
         const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -40,7 +39,7 @@ export default function EventInfo() {
     }
 
     fetchDate();
-  }, [supabase]);
+  }, []);
 
   if (!date || !time) return (
     <div className="bg-card rounded-xl p-6 shadow-sm border border-border animate-pulse">

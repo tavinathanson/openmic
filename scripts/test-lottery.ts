@@ -4,21 +4,21 @@ import * as path from 'path';
 // Load .env.local file
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-import { createServiceRoleClient } from '../src/lib/supabase';
-
-const supabase = createServiceRoleClient();
+import { db } from '../src/lib/db';
 
 async function testLotteryAlgorithm() {
   console.log('🧪 Testing Open Mic Lottery Algorithm\n');
   
   try {
     // Get active open mic date
-    const { data: activeDate } = await supabase
-      .from('open_mic_dates')
-      .select('*')
-      .eq('is_active', true)
-      .single();
-    
+    const activeDate = await db
+      .selectFrom('open_mic_dates')
+      .selectAll()
+      .where('is_active', '=', true)
+      .orderBy('date', 'asc')
+      .limit(1)
+      .executeTakeFirst();
+
     if (!activeDate) {
       console.log('❌ No active open mic date found');
       return;
@@ -26,14 +26,24 @@ async function testLotteryAlgorithm() {
     
     console.log(`📅 Active date: ${activeDate.date}\n`);
     
-    // Get all comedians for this date
-    const { data: allComedians } = await supabase
-      .from('sign_ups')
-      .select('*, people(full_name, email)')
-      .eq('open_mic_date_id', activeDate.id)
-      .eq('signup_type', 'comedian')
-      .order('created_at', { ascending: true });
-    
+    // Get all comedians for this date (joined to person), shaped like the old query.
+    const comedianRows = await db
+      .selectFrom('sign_ups')
+      .innerJoin('people', 'people.id', 'sign_ups.person_id')
+      .selectAll('sign_ups')
+      .select(['people.full_name as p_full_name', 'people.email as p_email'])
+      .where('sign_ups.open_mic_date_id', '=', activeDate.id)
+      .where('sign_ups.signup_type', '=', 'comedian')
+      .orderBy('sign_ups.created_at', 'asc')
+      .execute();
+
+    // Diagnostic script: keep rows loose so the analysis logic below is unchanged.
+    const allComedians = comedianRows.map((r) => ({
+      ...r,
+      people: { full_name: r.p_full_name, email: r.p_email },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    })) as any[];
+
     console.log(`👥 Total comedians signed up: ${allComedians?.length || 0}`);
     
     // Identify early birds (first 5)
