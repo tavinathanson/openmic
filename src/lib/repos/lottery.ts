@@ -1,5 +1,4 @@
 import { db } from '../db';
-import type { SignUp } from '../db-types';
 
 async function nextLotteryOrder(dateId: string): Promise<number> {
   const row = await db
@@ -77,12 +76,7 @@ export async function runLottery(dateId: string, opts: { dryRun?: boolean } = {}
     }
   }
 
-  // The draw decides WHO wins; signup order decides their position in the list.
-  const byId = new Map<string, SignUp>(lotteryEligible.map((c) => [c.id, c]));
-  lotteryWinners.sort(
-    (a, b) => new Date(byId.get(a)!.created_at).getTime() - new Date(byId.get(b)!.created_at).getTime()
-  );
-
+  // Winners keep their weighted-draw order (the lottery decides position too).
   const selected: string[] = [...lotteryWinners];
 
   // Fill remaining slots with late arrivals, least-late first.
