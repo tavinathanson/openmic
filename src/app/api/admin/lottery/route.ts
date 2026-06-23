@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin-auth';
 import { runLottery } from '@/lib/repos/lottery';
 
 export async function POST(request: Request) {
   try {
-    const { activeDateId, password, dryRun } = await request.json();
-
-    if (password !== 'tavi') {
+    if (!(await requireAdmin())) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const { activeDateId, dryRun } = await request.json();
 
     const selectedIds = await runLottery(activeDateId, { dryRun: !!dryRun });
     return NextResponse.json({ selectedIds });

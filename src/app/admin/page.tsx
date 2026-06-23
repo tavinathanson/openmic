@@ -66,13 +66,22 @@ export default function AdminPage() {
     }
   };
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'tavi') {
-      setIsAuthed(true);
-      sessionStorage.setItem('adminAuth', 'true');
-    } else {
-      alert('Wrong password');
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        setIsAuthed(true);
+        sessionStorage.setItem('adminAuth', 'true');
+      } else {
+        alert('Wrong password');
+      }
+    } catch {
+      alert('Login failed');
     }
   };
 
@@ -95,7 +104,6 @@ export default function AdminPage() {
         body: JSON.stringify({
           signUpId: comedianId,
           plusOne: !currentValue,
-          password: 'tavi'
         })
       });
 
@@ -129,7 +137,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signUpId, status, password: 'tavi' })
+        body: JSON.stringify({ signUpId, status })
       });
 
       if (!res.ok) {
@@ -154,11 +162,10 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/walkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name: walkInName, 
-          email, 
+        body: JSON.stringify({
+          name: walkInName,
+          email,
           activeDateId,
-          password: 'tavi'
         })
       });
       
@@ -184,7 +191,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/lottery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activeDateId, password: 'tavi', dryRun: true })
+        body: JSON.stringify({ activeDateId, dryRun: true })
       });
 
       const data = await res.json();
@@ -227,7 +234,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/lottery/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activeDateId, comedianIds: draftIds, password: 'tavi' })
+        body: JSON.stringify({ activeDateId, comedianIds: draftIds })
       });
 
       if (!res.ok) {
@@ -480,7 +487,6 @@ export default function AdminPage() {
                               body: JSON.stringify({
                                 comedianId: c.id,
                                 newOrder,
-                                password: 'tavi',
                                 activeDateId
                               })
                             });
@@ -503,7 +509,6 @@ export default function AdminPage() {
                             body: JSON.stringify({
                               comedianId: c.id,
                               newOrder,
-                              password: 'tavi',
                               activeDateId
                             })
                           });
@@ -524,7 +529,6 @@ export default function AdminPage() {
                             body: JSON.stringify({
                               comedianId: c.id,
                               newOrder: null,
-                              password: 'tavi',
                               activeDateId
                             })
                           });
@@ -562,7 +566,6 @@ export default function AdminPage() {
                                 body: JSON.stringify({
                                   comedianId: c.id,
                                   newOrder,
-                                  password: 'tavi',
                                   activeDateId
                                 })
                               });

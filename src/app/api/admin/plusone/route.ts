@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin-auth';
 import { setPlusOne } from '@/lib/repos/signups';
 
 export async function POST(request: Request) {
   try {
-    const { signUpId, plusOne, password } = await request.json();
-
-    if (password !== 'tavi') {
+    if (!(await requireAdmin())) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const { signUpId, plusOne } = await request.json();
 
     await setPlusOne(signUpId, plusOne);
 

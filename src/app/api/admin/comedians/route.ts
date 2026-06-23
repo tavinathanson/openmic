@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin-auth';
 import { getActiveOpenMicDate } from '@/lib/repos/dates';
 import { listComediansForDate } from '@/lib/repos/signups';
 
 export async function GET() {
   try {
+    if (!(await requireAdmin())) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     let activeDate;
     try {
       activeDate = await getActiveOpenMicDate();

@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin-auth';
 import { publishLottery } from '@/lib/repos/lottery';
 
 export async function POST(request: Request) {
   try {
-    const { activeDateId, comedianIds, password } = await request.json();
-
-    if (password !== 'tavi') {
+    if (!(await requireAdmin())) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const { activeDateId, comedianIds } = await request.json();
 
     if (!Array.isArray(comedianIds) || comedianIds.length === 0) {
       return NextResponse.json({ error: 'No comedians to publish' }, { status: 400 });

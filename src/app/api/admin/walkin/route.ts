@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin-auth';
 import { getOrCreatePersonId } from '@/lib/repos/people';
 import { createSignup } from '@/lib/repos/signups';
 
 export async function POST(request: Request) {
   try {
-    const { name, email, activeDateId, password } = await request.json();
-
-    if (password !== 'tavi') {
+    if (!(await requireAdmin())) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const { name, email, activeDateId } = await request.json();
 
     const personId = await getOrCreatePersonId(email, name);
 
