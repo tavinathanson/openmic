@@ -15,8 +15,8 @@ export default function ListPage() {
 
   useEffect(() => {
     loadComedians();
-    // Refresh every 10 seconds
-    const interval = setInterval(loadComedians, 10000);
+    // Refresh every 5 seconds
+    const interval = setInterval(loadComedians, 5000);
     return () => clearInterval(interval);
   }, []);
 

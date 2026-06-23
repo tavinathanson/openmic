@@ -57,7 +57,7 @@ export default function SlotCounter() {
     };
 
     // Poll for updates (replaces the old Supabase realtime subscription).
-    const interval = setInterval(fetchSlots, 10000);
+    const interval = setInterval(fetchSlots, 5000);
     return () => clearInterval(interval);
   }, [maxSlots]);
 
