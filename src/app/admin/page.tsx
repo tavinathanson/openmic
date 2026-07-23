@@ -15,11 +15,20 @@ interface Comedian {
   is_waitlist: boolean;
 }
 
+interface AudienceSignup {
+  id: string;
+  full_name: string;
+  email: string;
+  number_of_people: number;
+  created_at: string;
+}
+
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isAuthed, setIsAuthed] = useState(false);
   const [comedians, setComedians] = useState<Comedian[]>([]);
+  const [audience, setAudience] = useState<AudienceSignup[]>([]);
   const [walkInName, setWalkInName] = useState('');
   const [walkInEmail, setWalkInEmail] = useState('');
   const [activeDateId, setActiveDateId] = useState<string | null>(null);
@@ -59,6 +68,7 @@ export default function AdminPage() {
       
       const data = await res.json();
       setComedians(data.comedians);
+      setAudience(data.audience || []);
       setActiveDateId(data.activeDateId);
       setError(null);
     } catch {
@@ -705,6 +715,35 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Audience Signups</h2>
+            {audience.length > 0 && (
+              <span className="text-sm text-gray-500">
+                {audience.length} signup{audience.length === 1 ? '' : 's'} •{' '}
+                {audience.reduce((sum, a) => sum + a.number_of_people, 0)} people total
+              </span>
+            )}
+          </div>
+          {audience.length === 0 ? (
+            <p className="text-sm text-gray-400">No audience signups yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {audience.map((a) => (
+                <div key={a.id} className="bg-muted/30 rounded-lg p-3 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-gray-800">{a.full_name}</div>
+                    <div className="text-sm text-muted-foreground">{a.email}</div>
+                  </div>
+                  <span className="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-sm font-medium whitespace-nowrap">
+                    {a.number_of_people} {a.number_of_people === 1 ? 'person' : 'people'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </main>

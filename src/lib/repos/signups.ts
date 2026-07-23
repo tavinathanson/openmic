@@ -96,6 +96,34 @@ export async function listComediansForDate(dateId: string): Promise<ComedianRow[
     .execute();
 }
 
+export interface AudienceRow {
+  id: string;
+  person_id: string;
+  email: string | null;
+  full_name: string | null;
+  number_of_people: number;
+  created_at: string;
+}
+
+/** Audience signups for a date joined to their person, ordered by signup time. */
+export async function listAudienceForDate(dateId: string): Promise<AudienceRow[]> {
+  return await db
+    .selectFrom('sign_ups')
+    .innerJoin('people', 'people.id', 'sign_ups.person_id')
+    .select([
+      'sign_ups.id as id',
+      'sign_ups.person_id as person_id',
+      'people.email as email',
+      'people.full_name as full_name',
+      'sign_ups.number_of_people as number_of_people',
+      'sign_ups.created_at as created_at',
+    ])
+    .where('sign_ups.open_mic_date_id', '=', dateId)
+    .where('sign_ups.signup_type', '=', 'audience')
+    .orderBy('sign_ups.created_at', 'asc')
+    .execute();
+}
+
 /** Set or clear a comedian's check-in status. Pass 'uncheck' to clear. */
 export async function setCheckIn(id: string, status: CheckInStatus | 'uncheck'): Promise<void> {
   const data =

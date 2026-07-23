@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
 import { getActiveOpenMicDate } from '@/lib/repos/dates';
-import { listComediansForDate } from '@/lib/repos/signups';
+import { listAudienceForDate, listComediansForDate } from '@/lib/repos/signups';
 
 export async function GET() {
   try {
@@ -15,6 +15,7 @@ export async function GET() {
     } catch {
       return NextResponse.json({
         comedians: [],
+        audience: [],
         activeDateId: null,
         error: 'No active open mic date found',
       });
@@ -34,7 +35,16 @@ export async function GET() {
       is_waitlist: c.is_waitlist,
     }));
 
-    return NextResponse.json({ comedians, activeDateId: activeDate.id });
+    const audienceRows = await listAudienceForDate(activeDate.id);
+    const audience = audienceRows.map((a) => ({
+      id: a.id,
+      email: a.email ?? '',
+      full_name: a.full_name ?? 'No name',
+      number_of_people: a.number_of_people,
+      created_at: a.created_at,
+    }));
+
+    return NextResponse.json({ comedians, audience, activeDateId: activeDate.id });
   } catch {
     return NextResponse.json({ error: 'Failed to fetch comedians' }, { status: 500 });
   }
