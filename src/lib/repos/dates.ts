@@ -53,7 +53,7 @@ export async function ensureUpcomingActiveDate(
     .values({
       id: crypto.randomUUID(),
       date: addDays(today, daysOut),
-      time: '19:30:00',
+      time: '19:00:00',
       timezone: 'America/New_York',
       is_active: true,
       created_at: new Date().toISOString(),

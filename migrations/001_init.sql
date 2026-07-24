@@ -5,7 +5,7 @@
 CREATE TABLE open_mic_dates (
     id UUID PRIMARY KEY,
     date DATE NOT NULL,
-    time TIME NOT NULL DEFAULT '19:30:00',
+    time TIME NOT NULL DEFAULT '19:00:00',
     timezone TEXT NOT NULL DEFAULT 'America/New_York',
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL
