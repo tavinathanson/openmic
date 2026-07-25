@@ -23,6 +23,45 @@ interface AudienceSignup {
   created_at: string;
 }
 
+interface OpenMicDateSummary {
+  id: string;
+  date: string;
+  time: string;
+  is_active: boolean;
+}
+
+interface PastComedian {
+  id: string;
+  full_name: string;
+  check_in_status: string | null;
+  lottery_order: number | null;
+  first_mic_ever: boolean;
+  plus_one: boolean;
+  is_waitlist: boolean;
+}
+
+interface PastAudience {
+  id: string;
+  full_name: string;
+  number_of_people: number;
+}
+
+interface PastLineup {
+  date: OpenMicDateSummary;
+  comedians: PastComedian[];
+  audience: PastAudience[];
+}
+
+function formatEventDate(dateStr: string): string {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
@@ -38,6 +77,11 @@ export default function AdminPage() {
   const [copied, setCopied] = useState(false);
   const [draftIds, setDraftIds] = useState<string[] | null>(null);
   const [addQuery, setAddQuery] = useState('');
+  const [pastDates, setPastDates] = useState<OpenMicDateSummary[]>([]);
+  const [selectedPastDateId, setSelectedPastDateId] = useState('');
+  const [pastLineup, setPastLineup] = useState<PastLineup | null>(null);
+  const [pastLoading, setPastLoading] = useState(false);
+  const [pastError, setPastError] = useState<string | null>(null);
 
   const copyNames = async () => {
     const names = comedians.map(c => c.email).filter(Boolean).join(', ');
@@ -53,8 +97,44 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAuthed) {
       loadComedians();
+      loadPastDates();
     }
   }, [isAuthed]);
+
+  const loadPastDates = async () => {
+    try {
+      const res = await fetch('/api/admin/dates');
+      const data = await res.json();
+      if (!res.ok) {
+        setPastError(data.error || 'Failed to load past dates');
+        return;
+      }
+      setPastDates(data.dates || []);
+    } catch {
+      setPastError('Failed to load past dates');
+    }
+  };
+
+  const loadPastLineup = async (dateId: string) => {
+    setSelectedPastDateId(dateId);
+    setPastLineup(null);
+    setPastError(null);
+    if (!dateId) return;
+
+    setPastLoading(true);
+    try {
+      const res = await fetch(`/api/admin/dates?dateId=${encodeURIComponent(dateId)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setPastError(data.error || 'Failed to load list');
+      } else {
+        setPastLineup(data);
+      }
+    } catch {
+      setPastError('Failed to load list');
+    }
+    setPastLoading(false);
+  };
 
   const loadComedians = async () => {
     try {
@@ -742,6 +822,86 @@ export default function AdminPage() {
                   </span>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Past Lists</h2>
+          <select
+            value={selectedPastDateId}
+            onChange={(e) => loadPastLineup(e.target.value)}
+            className="w-full px-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Select a date…</option>
+            {pastDates.map((d) => (
+              <option key={d.id} value={d.id}>
+                {formatEventDate(d.date)}{d.is_active ? ' (active)' : ''}
+              </option>
+            ))}
+          </select>
+
+          {pastLoading && <p className="text-sm text-gray-400 mt-3">Loading…</p>}
+          {pastError && <p className="text-sm text-destructive mt-3">{pastError}</p>}
+
+          {pastLineup && !pastLoading && (
+            <div className="mt-4 space-y-4">
+              <h3 className="text-sm font-semibold text-gray-500">
+                {formatEventDate(pastLineup.date.date)}
+              </h3>
+
+              <div className="space-y-2">
+                {pastLineup.comedians.length === 0 ? (
+                  <p className="text-sm text-gray-400">No comedian signups for this date.</p>
+                ) : (
+                  pastLineup.comedians.map((c) => (
+                    <div
+                      key={c.id}
+                      className={`rounded-md p-3 font-medium flex items-center justify-between ${
+                        c.lottery_order ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      <span>
+                        {c.lottery_order ? `${c.lottery_order}. ` : ''}{c.full_name}
+                        {c.first_mic_ever && <span className="ml-1">🍪</span>}
+                        {c.plus_one && <span className="ml-1">⊕</span>}
+                        {c.is_waitlist && (
+                          <span className="ml-2 inline-block px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 rounded-full">
+                            Waitlist
+                          </span>
+                        )}
+                      </span>
+                      {c.check_in_status && (
+                        <span className="text-xs text-gray-500">{c.check_in_status.replace('_', ' ')}</span>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-gray-500 mb-2">
+                  Audience{pastLineup.audience.length > 0 && (
+                    <span className="font-normal">
+                      {' '}— {pastLineup.audience.reduce((sum, a) => sum + a.number_of_people, 0)} people total
+                    </span>
+                  )}
+                </h4>
+                {pastLineup.audience.length === 0 ? (
+                  <p className="text-sm text-gray-400">No audience signups for this date.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {pastLineup.audience.map((a) => (
+                      <div key={a.id} className="bg-muted/30 rounded-lg p-3 flex items-center justify-between">
+                        <span className="text-gray-800">{a.full_name}</span>
+                        <span className="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-sm font-medium whitespace-nowrap">
+                          {a.number_of_people} {a.number_of_people === 1 ? 'person' : 'people'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

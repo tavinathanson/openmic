@@ -17,6 +17,17 @@ export async function getActiveOpenMicDate(): Promise<OpenMicDate> {
   return row;
 }
 
+/** All open mic dates, most recent first. */
+export async function listOpenMicDates(): Promise<OpenMicDate[]> {
+  return await db.selectFrom('open_mic_dates').selectAll().orderBy('date', 'desc').execute();
+}
+
+/** Fetch a single open mic date by id, or null if it doesn't exist. */
+export async function getOpenMicDateById(id: string): Promise<OpenMicDate | null> {
+  const row = await db.selectFrom('open_mic_dates').selectAll().where('id', '=', id).executeTakeFirst();
+  return row ?? null;
+}
+
 /** Add a number of calendar days to a YYYY-MM-DD string. */
 function addDays(dateStr: string, days: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
