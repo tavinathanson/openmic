@@ -20,15 +20,25 @@ export async function getSignupForDate(personId: string, dateId: string): Promis
   return row ?? null;
 }
 
-/** Count confirmed (non-waitlist) comedians for a date. Mirrors the old RPC. */
-export async function countComedians(dateId: string): Promise<number> {
-  const row = await db
+/**
+ * Count confirmed (non-waitlist) comedians for a date. Mirrors the old RPC.
+ * Pass includeEarlyAccess: false to get the publicly-displayed count, which
+ * hides pre-open (/now) signups until the comedian window actually opens.
+ */
+export async function countComedians(
+  dateId: string,
+  opts: { includeEarlyAccess?: boolean } = {}
+): Promise<number> {
+  let query = db
     .selectFrom('sign_ups')
     .select((eb) => eb.fn.countAll<string>().as('count'))
     .where('open_mic_date_id', '=', dateId)
     .where('signup_type', '=', 'comedian')
-    .where('is_waitlist', '=', false)
-    .executeTakeFirstOrThrow();
+    .where('is_waitlist', '=', false);
+  if (opts.includeEarlyAccess === false) {
+    query = query.where('is_early_access', '=', false);
+  }
+  const row = await query.executeTakeFirstOrThrow();
   return Number(row.count);
 }
 
@@ -40,6 +50,7 @@ export interface CreateSignupInput {
   signupType: SignupType;
   willSupport: boolean;
   isWaitlist?: boolean;
+  isEarlyAccess?: boolean;
 }
 
 export async function createSignup(input: CreateSignupInput): Promise<SignUp> {
@@ -54,6 +65,7 @@ export async function createSignup(input: CreateSignupInput): Promise<SignUp> {
       signup_type: input.signupType,
       will_support: input.willSupport,
       is_waitlist: input.isWaitlist ?? false,
+      is_early_access: input.isEarlyAccess ?? false,
       created_at: new Date().toISOString(),
     })
     .returningAll()
@@ -71,6 +83,7 @@ export interface ComedianRow {
   first_mic_ever: boolean;
   plus_one: boolean;
   is_waitlist: boolean;
+  is_early_access: boolean;
 }
 
 /** Comedians for a date joined to their person, ordered by signup time. */
@@ -89,6 +102,7 @@ export async function listComediansForDate(dateId: string): Promise<ComedianRow[
       'sign_ups.first_mic_ever as first_mic_ever',
       'sign_ups.plus_one as plus_one',
       'sign_ups.is_waitlist as is_waitlist',
+      'sign_ups.is_early_access as is_early_access',
     ])
     .where('sign_ups.open_mic_date_id', '=', dateId)
     .where('sign_ups.signup_type', '=', 'comedian')

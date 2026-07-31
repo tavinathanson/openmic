@@ -34,6 +34,7 @@ export interface SignUpsTable {
   will_support: Generated<boolean>;
   plus_one: Generated<boolean>;
   is_waitlist: Generated<boolean>;
+  is_early_access: Generated<boolean>;
   check_in_status: Generated<CheckInStatus | null>;
   lottery_order: Generated<number | null>;
   checked_in_at: Generated<string | null>;

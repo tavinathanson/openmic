@@ -37,11 +37,14 @@ export async function runLottery(dateId: string, opts: { dryRun?: boolean } = {}
     .sort((a, b) => new Date(a.checked_in_at!).getTime() - new Date(b.checked_in_at!).getTime());
 
   // Early birds: first 5 comedians to sign up overall (stable across draws).
+  // Pre-open (/now) signups are excluded — they enter the lottery like anyone
+  // who signs up right when the window opens, not with a head-start bonus.
   const earlyBirdRows = await db
     .selectFrom('sign_ups')
     .select('id')
     .where('open_mic_date_id', '=', dateId)
     .where('signup_type', '=', 'comedian')
+    .where('is_early_access', '=', false)
     .orderBy('created_at', 'asc')
     .limit(5)
     .execute();

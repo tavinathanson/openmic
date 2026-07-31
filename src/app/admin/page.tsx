@@ -13,6 +13,7 @@ interface Comedian {
   first_mic_ever: boolean;
   plus_one: boolean;
   is_waitlist: boolean;
+  is_early_access: boolean;
 }
 
 interface AudienceSignup {
@@ -720,6 +721,11 @@ export default function AdminPage() {
                       {comedian.is_waitlist && (
                         <span className="ml-2 inline-block px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 rounded-full">
                           Waitlist
+                        </span>
+                      )}
+                      {comedian.is_early_access && (
+                        <span className="ml-2 inline-block px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">
+                          Early Access
                         </span>
                       )}
                     </span>

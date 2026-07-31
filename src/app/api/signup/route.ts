@@ -4,7 +4,7 @@ import { getActiveOpenMicDate } from '@/lib/repos/dates';
 import { getOrCreatePersonId } from '@/lib/repos/people';
 import { countComedians, createSignup, getSignupForDate } from '@/lib/repos/signups';
 import { isUniqueViolation } from '@/lib/db';
-import { isComedianSignupWindowOpen } from '@/lib/openMic';
+import { isComedianSignupWindowOpen, getComedianSignupOpenDate } from '@/lib/openMic';
 import { sendConfirmationEmail, sendWaitlistEmail, sendEmailErrorNotification } from '@/lib/resend';
 
 export async function POST(request: Request) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     email = body.email;
     type = body.type;
     full_name = body.full_name;
-    const { number_of_people, first_mic_ever, will_support } = body;
+    const { number_of_people, first_mic_ever, will_support, early_access } = body;
 
     if (!email || !type) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -33,8 +33,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No active open mic date found' }, { status: 400 });
     }
 
-    // Comedians can only sign up once the window opens; audience can sign up anytime.
-    if (type === 'comedian' && !isComedianSignupWindowOpen(activeDate.date)) {
+    // Comedians can only sign up once the window opens, unless they're coming
+    // from the early-access (/now) link — those signups are hidden from the
+    // public count until the window opens for real, see countComedians().
+    const windowOpen = isComedianSignupWindowOpen(activeDate.date);
+    const isEarlyAccess = type === 'comedian' && !windowOpen && Boolean(early_access);
+    if (type === 'comedian' && !windowOpen && !isEarlyAccess) {
       return NextResponse.json(
         { error: 'Comedian signups are not open yet for this date' },
         { status: 400 }
@@ -66,6 +70,7 @@ export async function POST(request: Request) {
         signupType: type,
         willSupport: will_support || false,
         isWaitlist,
+        isEarlyAccess,
       });
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -99,6 +104,17 @@ export async function POST(request: Request) {
         success: true,
         is_waitlist: true,
         message: 'You have been added to the waitlist!',
+      });
+    }
+    if (isEarlyAccess) {
+      const opensDate = getComedianSignupOpenDate(activeDate.date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      });
+      return NextResponse.json({
+        success: true,
+        message: `You're confirmed! Since general comedian signups don't open until ${opensDate}, your spot won't show up in the public count until then.`,
       });
     }
     return NextResponse.json({ success: true });

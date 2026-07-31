@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getActiveOpenMicDate } from '@/lib/repos/dates';
 import { listComediansForDate } from '@/lib/repos/signups';
+import { isComedianSignupWindowOpen } from '@/lib/openMic';
 
 export async function GET() {
   try {
     const activeDate = await getActiveOpenMicDate();
-    const rows = await listComediansForDate(activeDate.id);
+    const windowOpen = isComedianSignupWindowOpen(activeDate.date);
+    let rows = await listComediansForDate(activeDate.id);
+    // Pre-open (/now) signups stay off this public list, same as the slot count,
+    // until the comedian window actually opens.
+    if (!windowOpen) {
+      rows = rows.filter((c) => !c.is_early_access);
+    }
 
     const comedians = rows.map((c) => ({
       id: c.id,

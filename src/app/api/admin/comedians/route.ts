@@ -33,6 +33,7 @@ export async function GET() {
       first_mic_ever: c.first_mic_ever,
       plus_one: c.plus_one,
       is_waitlist: c.is_waitlist,
+      is_early_access: c.is_early_access,
     }));
 
     const audienceRows = await listAudienceForDate(activeDate.id);

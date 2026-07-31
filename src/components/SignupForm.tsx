@@ -9,7 +9,15 @@ import { isComedianSignupWindowOpen, getComedianSignupOpenDate } from '@/lib/ope
 
 type SignupType = 'comedian' | 'audience';
 
-export default function SignupForm() {
+interface SignupFormProps {
+  /** True on the /now early-access form: locked to comedian, bypasses the
+   *  "signups aren't open yet" gate, and flags the signup so it counts toward
+   *  the spot cap without showing up in the public count until the window
+   *  actually opens. */
+  earlyAccess?: boolean;
+}
+
+export default function SignupForm({ earlyAccess }: SignupFormProps = {}) {
   const [email, setEmail] = useState('');
   const [type, setType] = useState<SignupType>('comedian');
   const [status, setStatus] = useState<'idle' | 'loading' | 'validating' | 'success' | 'error'>('idle');
@@ -32,6 +40,8 @@ export default function SignupForm() {
   const [userCaptchaAnswer, setUserCaptchaAnswer] = useState('');
   const [comedianWindowOpen, setComedianWindowOpen] = useState<boolean | null>(null);
   const [signupOpensDate, setSignupOpensDate] = useState<string | null>(null);
+  // The early-access form is always allowed to submit, regardless of the real window state.
+  const effectiveWindowOpen = earlyAccess ? true : comedianWindowOpen;
 
   // Generate captcha question
   const generateCaptcha = () => {
@@ -63,8 +73,10 @@ export default function SignupForm() {
     generateCaptcha();
   }, []);
 
-  // Check if comedian signup window is open
+  // Check if comedian signup window is open (skipped on the early-access form,
+  // which is always allowed to submit regardless of the window).
   useEffect(() => {
+    if (earlyAccess) return;
     async function checkSignupWindow() {
       try {
         const data = await fetchActiveDate();
@@ -90,7 +102,7 @@ export default function SignupForm() {
       }
     }
     checkSignupWindow();
-  }, []);
+  }, [earlyAccess]);
 
   // Reset state when type changes
   useEffect(() => {
@@ -227,6 +239,7 @@ export default function SignupForm() {
           number_of_people: numPeople,
           first_mic_ever: type === 'comedian' ? firstMicEver : false,
           will_support: willSupport,
+          early_access: earlyAccess || false,
         }),
       });
 
@@ -240,10 +253,12 @@ export default function SignupForm() {
       setIsWaitlist(data.is_waitlist || false);
       setMessage(data.message || 'You\'re signed up! You\'ll also get a confirmation email.');
 
-      // Immediately decrement slot counter for comedian signups (not waitlist)
+      // Immediately decrement slot counter for comedian signups (not waitlist).
+      // Skipped for early-access signups — they shouldn't move the public count
+      // until the real signup window opens.
       // Wrapped in try-catch to ensure signup confirmation is never affected
       try {
-        if (type === 'comedian' && !data.is_waitlist) {
+        if (type === 'comedian' && !data.is_waitlist && !earlyAccess) {
           decrementSlotRef.current();
         }
       } catch {
@@ -281,45 +296,51 @@ export default function SignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <div>
-        <label className="block text-lg font-medium text-foreground mb-3">
-          What are you signing up as?
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setType('comedian')}
-            className={`flex items-center gap-3 p-4 rounded-lg font-medium transition-all duration-200 ${
-              type === 'comedian'
-                ? 'bg-primary text-white shadow-sm hover:bg-primary-light'
-                : 'bg-muted-light/5 text-muted hover:bg-muted-light/10'
-            }`}
-          >
-            <span className="text-xl">🎤</span>
-            <div className="text-left">
-              <div className="text-base">I&apos;m a comedian</div>
-              <div className="text-xs opacity-80">Performing solo or bringing guests</div>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setType('audience')}
-            className={`flex items-center gap-3 p-4 rounded-lg font-medium transition-all duration-200 ${
-              type === 'audience'
-                ? 'bg-primary text-white shadow-sm hover:bg-primary-light'
-                : 'bg-muted-light/5 text-muted hover:bg-muted-light/10'
-            }`}
-          >
-            <span className="text-xl">🎟️</span>
-            <div className="text-left">
-              <div className="text-base">I&apos;m here to watch</div>
-              <div className="text-xs opacity-80">Bring your friends!</div>
-            </div>
-          </button>
+      {earlyAccess ? (
+        <div className="p-4 bg-primary-light/5 text-primary-dark rounded-lg border border-primary-light/10 text-center font-medium">
+          🎤 Early access comedian signup
         </div>
-      </div>
+      ) : (
+        <div>
+          <label className="block text-lg font-medium text-foreground mb-3">
+            What are you signing up as?
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setType('comedian')}
+              className={`flex items-center gap-3 p-4 rounded-lg font-medium transition-all duration-200 ${
+                type === 'comedian'
+                  ? 'bg-primary text-white shadow-sm hover:bg-primary-light'
+                  : 'bg-muted-light/5 text-muted hover:bg-muted-light/10'
+              }`}
+            >
+              <span className="text-xl">🎤</span>
+              <div className="text-left">
+                <div className="text-base">I&apos;m a comedian</div>
+                <div className="text-xs opacity-80">Performing solo or bringing guests</div>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setType('audience')}
+              className={`flex items-center gap-3 p-4 rounded-lg font-medium transition-all duration-200 ${
+                type === 'audience'
+                  ? 'bg-primary text-white shadow-sm hover:bg-primary-light'
+                  : 'bg-muted-light/5 text-muted hover:bg-muted-light/10'
+              }`}
+            >
+              <span className="text-xl">🎟️</span>
+              <div className="text-left">
+                <div className="text-base">I&apos;m here to watch</div>
+                <div className="text-xs opacity-80">Bring your friends!</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
 
-      {type === 'comedian' && comedianWindowOpen === false && (
+      {type === 'comedian' && effectiveWindowOpen === false && (
         <div className="p-6 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,7 +364,7 @@ export default function SignupForm() {
         </div>
       )}
 
-      {type === 'comedian' && comedianWindowOpen !== false && (
+      {type === 'comedian' && effectiveWindowOpen !== false && (
         <div className="p-4 bg-primary-light/5 text-primary-dark rounded-lg border border-primary-light/10">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,14 +375,14 @@ export default function SignupForm() {
         </div>
       )}
 
-      {type === 'comedian' && comedianWindowOpen !== false && !areSlotsFull && (
+      {type === 'comedian' && effectiveWindowOpen !== false && !areSlotsFull && (
         <div className="text-sm text-muted text-center">
           No worries if plans change! Canceling your spot is easy.
         </div>
       )}
 
       {/* Hide the rest of the form if comedian window is closed */}
-      {(type !== 'comedian' || comedianWindowOpen !== false) && (
+      {(type !== 'comedian' || effectiveWindowOpen !== false) && (
         <>
       <div>
         <div className="relative">
