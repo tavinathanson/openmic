@@ -215,6 +215,33 @@ export default function AdminPage() {
     }
   };
 
+  // Hard delete, unlike "not coming": the row goes away and the spot count drops.
+  const deleteSignup = async (signUpId: string, name: string, kind: 'comedian' | 'audience') => {
+    if (!confirm(`Permanently delete ${kind} signup for ${name}? This frees up their spot and can't be undone.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signUpId })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Failed to delete signup');
+      } else {
+        setError(null);
+        await loadComedians();
+      }
+    } catch {
+      setError('Failed to delete signup');
+    }
+    setLoading(false);
+  };
+
   const checkIn = async (signUpId: string, status: string) => {
     // Store previous state for rollback
     const previousComedians = comedians;
@@ -797,6 +824,14 @@ export default function AdminPage() {
                   <span className={`text-sm font-medium ${comedian.plus_one ? 'text-purple-600' : 'text-gray-400'}`}>
                     {comedian.plus_one ? '+1 Guest' : 'Solo'}
                   </span>
+                  <button
+                    onClick={() => deleteSignup(comedian.id, comedian.full_name, 'comedian')}
+                    className="ml-auto text-sm text-red-600 hover:text-red-700 hover:underline disabled:opacity-50"
+                    disabled={loading}
+                    title="Permanently delete this signup"
+                  >
+                    🗑 Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -823,9 +858,19 @@ export default function AdminPage() {
                     <div className="font-medium text-gray-800">{a.full_name}</div>
                     <div className="text-sm text-muted-foreground">{a.email}</div>
                   </div>
-                  <span className="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-sm font-medium whitespace-nowrap">
-                    {a.number_of_people} {a.number_of_people === 1 ? 'person' : 'people'}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-sm font-medium whitespace-nowrap">
+                      {a.number_of_people} {a.number_of_people === 1 ? 'person' : 'people'}
+                    </span>
+                    <button
+                      onClick={() => deleteSignup(a.id, a.full_name, 'audience')}
+                      className="text-sm text-red-600 hover:text-red-700 hover:underline disabled:opacity-50"
+                      disabled={loading}
+                      title="Permanently delete this signup"
+                    >
+                      🗑
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

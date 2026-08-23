@@ -151,3 +151,25 @@ export async function setCheckIn(id: string, status: CheckInStatus | 'uncheck'):
 export async function setPlusOne(id: string, plusOne: boolean): Promise<void> {
   await db.updateTable('sign_ups').set({ plus_one: plusOne }).where('id', '=', id).execute();
 }
+
+export interface DeletedSignup {
+  id: string;
+  open_mic_date_id: string;
+  signup_type: SignupType;
+  lottery_order: number | null;
+  is_waitlist: boolean;
+}
+
+/**
+ * Hard-delete a signup, leaving no cancellation_history row behind. This is for
+ * admin cleanup of test/duplicate signups, where the spot should come back as if
+ * the signup never happened — unlike a cancellation, which is logged.
+ */
+export async function deleteSignup(id: string): Promise<DeletedSignup | null> {
+  const row = await db
+    .deleteFrom('sign_ups')
+    .where('id', '=', id)
+    .returning(['id', 'open_mic_date_id', 'signup_type', 'lottery_order', 'is_waitlist'])
+    .executeTakeFirst();
+  return row ?? null;
+}

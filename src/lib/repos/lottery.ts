@@ -122,7 +122,7 @@ export async function reorderLottery(
 ): Promise<void> {
   if (newOrder === null) {
     await db.updateTable('sign_ups').set({ lottery_order: null }).where('id', '=', comedianId).execute();
-    await renumber(dateId);
+    await renumberLottery(dateId);
     return;
   }
 
@@ -144,7 +144,8 @@ export async function reorderLottery(
   );
 }
 
-async function renumber(dateId: string): Promise<void> {
+/** Close gaps in the published order so positions run 1..n with no holes. */
+export async function renumberLottery(dateId: string): Promise<void> {
   const remaining = await db
     .selectFrom('sign_ups')
     .select('id')
