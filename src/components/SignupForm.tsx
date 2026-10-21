@@ -35,6 +35,7 @@ export default function SignupForm({ earlyAccess }: SignupFormProps = {}) {
   const [existingSignupIsWaitlist, setExistingSignupIsWaitlist] = useState(false);
   const [willSupport, setWillSupport] = useState(false);
   const [noShowAck, setNoShowAck] = useState(false);
+  const [locationAck, setLocationAck] = useState(false);
   const [captchaQuestion, setCaptchaQuestion] = useState('');
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [userCaptchaAnswer, setUserCaptchaAnswer] = useState('');
@@ -292,7 +293,23 @@ export default function SignupForm({ earlyAccess }: SignupFormProps = {}) {
     numberOfPeople &&
     !alreadySignedUp &&
     userCaptchaAnswer.trim() !== '' &&
-    (type !== 'comedian' || noShowAck);
+    (type !== 'comedian' || (noShowAck && locationAck));
+
+  // Required comedian acknowledgments, shown under the captcha.
+  const comedianAcks = [
+    {
+      id: 'locationAck',
+      checked: locationAck,
+      set: setLocationAck,
+      label: 'I know this mic is in Lawrenceville, New Jersey.',
+    },
+    {
+      id: 'noShowAck',
+      checked: noShowAck,
+      set: setNoShowAck,
+      label: 'If I can\'t make it, I\'ll cancel my spot. Canceling is fine, no-showing is not.',
+    },
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -548,21 +565,21 @@ export default function SignupForm({ earlyAccess }: SignupFormProps = {}) {
               placeholder="Enter your answer"
             />
           </div>
-          {type === 'comedian' && (
-            <div className={`flex items-center space-x-2 p-4 border-t ${noShowAck ? 'bg-amber-50 border-amber-200' : 'bg-amber-50 border-amber-400'}`}>
+          {type === 'comedian' && comedianAcks.map((ack) => (
+            <div key={ack.id} className={`flex items-center space-x-2 p-4 border-t ${ack.checked ? 'bg-amber-50 border-amber-200' : 'bg-amber-50 border-amber-400'}`}>
               <input
                 type="checkbox"
-                id="noShowAck"
-                checked={noShowAck}
-                onChange={(e) => setNoShowAck(e.target.checked)}
+                id={ack.id}
+                checked={ack.checked}
+                onChange={(e) => ack.set(e.target.checked)}
                 className="h-4 w-4 rounded border-amber-400 text-primary focus:ring-primary"
               />
-              <label htmlFor="noShowAck" className="text-sm text-amber-900 font-medium">
-                If I can&apos;t make it, I&apos;ll cancel my spot. Canceling is fine, no-showing is not.
+              <label htmlFor={ack.id} className="text-sm text-amber-900 font-medium">
+                {ack.label}
               </label>
               <span className="ml-auto text-xs font-semibold text-amber-600 uppercase tracking-wide shrink-0">Required</span>
             </div>
-          )}
+          ))}
         </div>
       )}
 
