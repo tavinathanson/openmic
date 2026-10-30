@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isComedianSignupWindowOpen, getComedianSignupOpenDate, todayEastern } from './openMic';
+import { getCheckInOpensAt, isComedianSignupWindowOpen, getComedianSignupOpenDate, todayEastern } from './openMic';
 
 describe('todayEastern', () => {
   beforeEach(() => { vi.useFakeTimers(); });
@@ -93,5 +93,15 @@ describe('getComedianSignupOpenDate', () => {
     expect(result.getFullYear()).toBe(2025);
     expect(result.getMonth()).toBe(11); // December
     expect(result.getDate()).toBe(27);
+  });
+});
+
+describe('getCheckInOpensAt', () => {
+  it('opens 15 minutes before a 7pm EDT show', () => {
+    expect(getCheckInOpensAt('2026-07-15', '19:00:00').toISOString()).toBe('2026-07-15T22:45:00.000Z');
+  });
+
+  it('opens 15 minutes before a 7pm EST show', () => {
+    expect(getCheckInOpensAt('2026-11-12', '19:00:00').toISOString()).toBe('2026-11-12T23:45:00.000Z');
   });
 });

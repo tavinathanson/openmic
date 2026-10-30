@@ -1,3 +1,5 @@
+import { fromZonedTime } from 'date-fns-tz';
+
 // Signup window opens this many days before the event (for comedians only)
 export const COMEDIAN_SIGNUP_WINDOW_DAYS = 14;
 
@@ -34,4 +36,12 @@ export function getComedianSignupOpenDate(eventDateStr: string): Date {
   return new Date(y, m - 1, d);
 }
 
- 
+
+// The public /list lineup stays hidden until this many minutes before showtime.
+export const CHECK_IN_OPENS_MINUTES_BEFORE = 15;
+
+/** When check-in opens for an event, given its YYYY-MM-DD date, HH:MM:SS start time and IANA timezone. */
+export function getCheckInOpensAt(eventDateStr: string, time: string, timezone: string = EASTERN_TZ): Date {
+  const start = fromZonedTime(`${eventDateStr}T${time}`, timezone);
+  return new Date(start.getTime() - CHECK_IN_OPENS_MINUTES_BEFORE * 60_000);
+}

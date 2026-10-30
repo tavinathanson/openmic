@@ -11,6 +11,7 @@ interface Comedian {
 
 export default function ListPage() {
   const [comedians, setComedians] = useState<Comedian[]>([]);
+  const [checkInOpensAt, setCheckInOpensAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function ListPage() {
       if (res.ok) {
         const data = await res.json();
         setComedians(data.comedians);
+        setCheckInOpensAt(data.checkInOpen ? null : data.checkInOpensAt);
       }
     } finally {
       setLoading(false);
@@ -62,74 +64,85 @@ export default function ListPage() {
           </p>
         </div>
 
-        <div className="bg-card rounded-xl p-6 shadow-sm border-2 border-green-400">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-green-600">✅ Confirmed Order</h2>
-            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Locked In</span>
+        {checkInOpensAt ? (
+          <div className="bg-card rounded-xl p-6 shadow-sm border-2 border-gray-200 text-center">
+            <p className="text-xl font-bold text-gray-700">
+              The list shows up here at check-in,{' '}
+              {new Date(checkInOpensAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })}.
+            </p>
           </div>
-          {selectedComedians.length > 0 ? (
-            <div className="space-y-3">
-              {selectedComedians.map((c) => (
-                <div key={c.id} className="text-lg bg-green-100 text-green-800 rounded-md p-4 font-semibold flex items-center gap-3">
-                  <span className="inline-flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full text-base font-bold">{c.lottery_order}</span>
-                  <span>{c.full_name}</span>
-                </div>
-              ))}
+        ) : (
+          <>
+          <div className="bg-card rounded-xl p-6 shadow-sm border-2 border-green-400">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-green-600">✅ Confirmed Order</h2>
+              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Locked In</span>
             </div>
-          ) : (
-            <div className="relative">
-              <div className="space-y-3 opacity-30">
-                {[1, 2, 3, 4].map((num) => (
-                  <div key={num} className="text-lg bg-green-100 text-green-800 rounded-md p-4 font-semibold">
-                    {num}.
+            {selectedComedians.length > 0 ? (
+              <div className="space-y-3">
+                {selectedComedians.map((c) => (
+                  <div key={c.id} className="text-lg bg-green-100 text-green-800 rounded-md p-4 font-semibold flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full text-base font-bold">{c.lottery_order}</span>
+                    <span>{c.full_name}</span>
                   </div>
                 ))}
               </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-green-100 border-2 border-green-600 rounded-xl px-8 py-6 shadow-lg">
-                  <p className="text-2xl font-bold text-green-800 text-center">
-                    🎲 Random Drawing<br />Will Happen Soon!
-                  </p>
+            ) : (
+              <div className="relative">
+                <div className="space-y-3 opacity-30">
+                  {[1, 2, 3, 4].map((num) => (
+                    <div key={num} className="text-lg bg-green-100 text-green-800 rounded-md p-4 font-semibold">
+                      {num}.
+                    </div>
+                  ))}
                 </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-green-100 border-2 border-green-600 rounded-xl px-8 py-6 shadow-lg">
+                    <p className="text-2xl font-bold text-green-800 text-center">
+                      🎲 Random Drawing<br />Will Happen Soon!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {checkedIn.length > 0 && (
+            <div className="bg-card rounded-xl p-6 shadow-sm border-2 border-amber-300">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold text-amber-600">🎲 In the Lottery Pool</h2>
+                <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">Random Draw</span>
+              </div>
+              <p className="text-sm text-amber-700 mb-4 font-medium">Order NOT set yet: will be drawn randomly!</p>
+              <div className="space-y-2">
+                {checkedIn.map((c) => (
+                  <div key={c.id} className="p-3 bg-amber-50 rounded-md text-gray-800 flex justify-between items-center">
+                    <span>{c.full_name}</span>
+                    <span className="text-amber-600 text-sm font-medium">Order: TBD</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
-        </div>
 
-        {checkedIn.length > 0 && (
-          <div className="bg-card rounded-xl p-6 shadow-sm border-2 border-amber-300">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-bold text-amber-600">🎲 In the Lottery Pool</h2>
-              <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">Random Draw</span>
+          {notCheckedIn.length > 0 && (
+            <div className="bg-card rounded-xl p-6 shadow-sm border border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold text-gray-400">👻 Not Checked In</h2>
+                <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium">Not in draw</span>
+              </div>
+              <p className="text-sm text-gray-400 mb-4">Must check in to enter lottery</p>
+              <div className="space-y-2">
+                {notCheckedIn.map((c) => (
+                  <div key={c.id} className="p-3 bg-gray-50 rounded-md text-gray-400 flex justify-between items-center">
+                    <span>{c.full_name}</span>
+                    <span className="text-xs text-gray-300">–</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="text-sm text-amber-700 mb-4 font-medium">Order NOT set yet: will be drawn randomly!</p>
-            <div className="space-y-2">
-              {checkedIn.map((c) => (
-                <div key={c.id} className="p-3 bg-amber-50 rounded-md text-gray-800 flex justify-between items-center">
-                  <span>{c.full_name}</span>
-                  <span className="text-amber-600 text-sm font-medium">Order: TBD</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {notCheckedIn.length > 0 && (
-          <div className="bg-card rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-bold text-gray-400">👻 Not Checked In</h2>
-              <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium">Not in draw</span>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">Must check in to enter lottery</p>
-            <div className="space-y-2">
-              {notCheckedIn.map((c) => (
-                <div key={c.id} className="p-3 bg-gray-50 rounded-md text-gray-400 flex justify-between items-center">
-                  <span>{c.full_name}</span>
-                  <span className="text-xs text-gray-300">–</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
+          </>
         )}
       </div>
     </main>
